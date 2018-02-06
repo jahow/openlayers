@@ -24,7 +24,7 @@ import WebGLBuffer from '../../webgl/Buffer.js';
  * @constructor
  * @extends {ol.renderer.webgl.Layer}
  * @param {ol.renderer.webgl.Map} mapRenderer Map renderer.
- * @param {ol.layer.Tile} tileLayer Tile layer.
+ * @param {ol.layer.Tile|ol.layer.VectorTile} tileLayer Tile layer.
  * @api
  */
 const WebGLTileLayerRenderer = function(mapRenderer, tileLayer) {
@@ -73,10 +73,10 @@ const WebGLTileLayerRenderer = function(mapRenderer, tileLayer) {
   this.renderedFramebufferExtent_ = null;
 
   /**
-   * @private
+   * @protected
    * @type {number}
    */
-  this.renderedRevision_ = -1;
+  this.renderedRevision = -1;
 
   /**
    * @private
@@ -84,6 +84,11 @@ const WebGLTileLayerRenderer = function(mapRenderer, tileLayer) {
    */
   this.tmpSize_ = [0, 0];
 
+  /**
+   * @protected
+   * @type {ol.Extent}
+   */
+  this.tmpExtent = createEmpty();
 };
 
 inherits(WebGLTileLayerRenderer, WebGLLayerRenderer);
@@ -192,7 +197,7 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
   let framebufferExtent;
   if (this.renderedTileRange_ &&
       this.renderedTileRange_.equals(tileRange) &&
-      this.renderedRevision_ == tileSource.getRevision()) {
+      this.renderedRevision == tileSource.getRevision()) {
     framebufferExtent = this.renderedFramebufferExtent_;
   } else {
 
@@ -246,7 +251,7 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
 
     const useInterimTilesOnError = tileLayer.getUseInterimTilesOnError();
     let allTilesLoaded = true;
-    const tmpExtent = createEmpty();
+    this.tmpExtent = createEmpty();
     const tmpTileRange = new TileRange(0, 0, 0, 0);
     let childTileRange, drawable, fullyLoaded, tile, tileState;
     let x, y, tileExtent;
@@ -256,7 +261,7 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
         tile = tileSource.getTile(z, x, y, pixelRatio, projection);
         if (layerState.extent !== undefined) {
           // ignore tiles outside layer extent
-          tileExtent = tileGrid.getTileCoordExtent(tile.tileCoord, tmpExtent);
+          tileExtent = tileGrid.getTileCoordExtent(tile.tileCoord, this.tmpExtent);
           if (!intersects(tileExtent, layerState.extent)) {
             continue;
           }
@@ -282,10 +287,10 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
 
         allTilesLoaded = false;
         fullyLoaded = tileGrid.forEachTileCoordParentTileRange(
-          tile.tileCoord, findLoadedTiles, null, tmpTileRange, tmpExtent);
+          tile.tileCoord, findLoadedTiles, null, tmpTileRange, this.tmpExtent);
         if (!fullyLoaded) {
           childTileRange = tileGrid.getTileCoordChildTileRange(
-            tile.tileCoord, tmpTileRange, tmpExtent);
+            tile.tileCoord, tmpTileRange, this.tmpExtent);
           if (childTileRange) {
             findLoadedTiles(z + 1, childTileRange);
           }
@@ -303,7 +308,7 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
       const tilesToDraw = tilesToDrawByZ[zs[i]];
       for (const tileKey in tilesToDraw) {
         tile = tilesToDraw[tileKey];
-        tileExtent = tileGrid.getTileCoordExtent(tile.tileCoord, tmpExtent);
+        tileExtent = tileGrid.getTileCoordExtent(tile.tileCoord, this.tmpExtent);
         u_tileOffset[0] = 2 * (tileExtent[2] - tileExtent[0]) /
             framebufferExtentDimension;
         u_tileOffset[1] = 2 * (tileExtent[3] - tileExtent[1]) /
@@ -322,11 +327,11 @@ WebGLTileLayerRenderer.prototype.prepareFrame = function(frameState, layerState,
     if (allTilesLoaded) {
       this.renderedTileRange_ = tileRange;
       this.renderedFramebufferExtent_ = framebufferExtent;
-      this.renderedRevision_ = tileSource.getRevision();
+      this.renderedRevision = tileSource.getRevision();
     } else {
       this.renderedTileRange_ = null;
       this.renderedFramebufferExtent_ = null;
-      this.renderedRevision_ = -1;
+      this.renderedRevision = -1;
       frameState.animate = true;
     }
 

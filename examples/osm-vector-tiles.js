@@ -86,5 +86,6 @@ const map = new Map({
     center: fromLonLat([-74.0064, 40.7142]),
     maxZoom: 19,
     zoom: 15
-  })
+  }),
+  renderer: 'webgl'
 });
