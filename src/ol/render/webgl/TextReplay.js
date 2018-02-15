@@ -11,6 +11,9 @@ import _ol_render_webgl_ from '../webgl.js';
 import WebGLTextureReplay from '../webgl/TextureReplay.js';
 import AtlasManager from '../../style/AtlasManager.js';
 import WebGLBuffer from '../../webgl/Buffer.js';
+import {fragment, vertex} from '../webgl/textreplay/defaultshader.js';
+import Locations from '../webgl/textreplay/defaultshader/Locations.js';
+import _ol_webgl_ from '../../webgl.js';
 
 /**
  * @constructor
@@ -255,7 +258,7 @@ WebGLTextReplay.prototype.addCharToAtlas_ = function(char) {
     const state = this.state_;
     const mCtx = this.measureCanvas_.getContext('2d');
     mCtx.font = state.font;
-    const width = Math.ceil(mCtx.measureText(char).width * state.scale);
+    const width = Math.ceil(mCtx.measureText(char).width * state.scale * 1.1);
 
     const info = glyphAtlas.atlas.add(char, width, glyphAtlas.height,
       function(ctx, x, y) {
@@ -291,7 +294,7 @@ WebGLTextReplay.prototype.addCharToAtlas_ = function(char) {
         ctx.shadowColor = 'white';
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
-        ctx.shadowBlur = 3;
+        ctx.shadowBlur = 5;
         ctx.fillText(char, x, y);
       });
 
@@ -462,4 +465,49 @@ WebGLTextReplay.prototype.getTextures = function(opt_all) {
 WebGLTextReplay.prototype.getHitDetectionTextures = function() {
   return this.textures_;
 };
+
+
+/**
+ * @inheritDoc
+ */
+WebGLTextReplay.prototype.setUpProgram = function(gl, context, size, pixelRatio) {
+  // get the program
+  const program = context.getProgram(fragment, vertex);
+
+  // get the locations
+  let locations;
+  if (!this.defaultLocations) {
+    locations = new Locations(gl, program);
+    this.defaultLocations = locations;
+  } else {
+    locations = this.defaultLocations;
+  }
+
+  // use the program (FIXME: use the return value)
+  context.useProgram(program);
+
+  // enable the vertex attrib arrays
+  gl.enableVertexAttribArray(locations.a_position);
+  gl.vertexAttribPointer(locations.a_position, 2, _ol_webgl_.FLOAT,
+    false, 32, 0);
+
+  gl.enableVertexAttribArray(locations.a_offsets);
+  gl.vertexAttribPointer(locations.a_offsets, 2, _ol_webgl_.FLOAT,
+    false, 32, 8);
+
+  gl.enableVertexAttribArray(locations.a_texCoord);
+  gl.vertexAttribPointer(locations.a_texCoord, 2, _ol_webgl_.FLOAT,
+    false, 32, 16);
+
+  gl.enableVertexAttribArray(locations.a_opacity);
+  gl.vertexAttribPointer(locations.a_opacity, 1, _ol_webgl_.FLOAT,
+    false, 32, 24);
+
+  gl.enableVertexAttribArray(locations.a_rotateWithView);
+  gl.vertexAttribPointer(locations.a_rotateWithView, 1, _ol_webgl_.FLOAT,
+    false, 32, 28);
+
+  return locations;
+};
+
 export default WebGLTextReplay;

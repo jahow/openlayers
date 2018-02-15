@@ -199,7 +199,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
     } else if (layer == 'country_label' && scalerank === 2 &&
         resolution <= 19567.87924100512) {
       text.getText().setText(feature.get('name_en'));
-      text.getText().setFont('bold 10px "Open Sans", "Arial Unicode MS"');
+      text.getText().setFont('bold 18px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#334');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(2);
@@ -207,7 +207,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
     } else if (layer == 'country_label' && scalerank === 3 &&
         resolution <= 9783.93962050256) {
       text.getText().setText(feature.get('name_en'));
-      text.getText().setFont('bold 9px "Open Sans", "Arial Unicode MS"');
+      text.getText().setFont('bold 16px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#334');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(2);
@@ -215,7 +215,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
     } else if (layer == 'country_label' && scalerank === 4 &&
         resolution <= 4891.96981025128) {
       text.getText().setText(feature.get('name_en'));
-      text.getText().setFont('bold 8px "Open Sans", "Arial Unicode MS"');
+      text.getText().setFont('bold 14px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#334');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(2);
@@ -224,7 +224,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
         geom == 'Point') {
       text.getText().setText(feature.get('name_en'));
       text.getText().setFont(
-          'italic 11px "Open Sans", "Arial Unicode MS"');
+          'italic 32px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#74aee9');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(1);
@@ -233,7 +233,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
         geom == 'Point') {
       text.getText().setText(feature.get('name_en'));
       text.getText().setFont(
-          'italic 11px "Open Sans", "Arial Unicode MS"');
+          'italic 32px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#74aee9');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(1);
@@ -242,7 +242,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
         geom == 'Point') {
       text.getText().setText(feature.get('name_en'));
       text.getText().setFont(
-          'italic 10px "Open Sans", "Arial Unicode MS"');
+          'italic 32px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#74aee9');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(1);
@@ -251,7 +251,7 @@ function createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text) {
         geom == 'Point') {
       text.getText().setText(feature.get('name_en'));
       text.getText().setFont(
-          'italic 9px "Open Sans", "Arial Unicode MS"');
+          'italic 32px "Open Sans", "Arial Unicode MS"');
       fill.setColor('#74aee9');
       stroke.setColor('rgba(255,255,255,0.8)');
       stroke.setWidth(1);
