@@ -272,7 +272,7 @@ WebGLContext.prototype.initHitDetectionFramebuffer_ = function() {
   const framebuffer = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
-  const texture = WebGLContext.createEmptyTexture(gl, 1, 1);
+  const texture = createEmptyTexture(gl, 1, 1);
   const renderbuffer = gl.createRenderbuffer();
   gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 1, 1);
