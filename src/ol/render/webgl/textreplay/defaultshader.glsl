@@ -47,9 +47,9 @@ void main(void) {
   // gl_FragColor.a = v_opacity * u_opacity;
 
   //taken from https://blog.mapbox.com/drawing-text-with-signed-distance-fields-in-mapbox-gl-b0933af6f817
-  float dist = texture2D(u_image, v_texCoord).a;
-  float alpha = smoothstep(0.10, 0.25, dist);
-  float color = 0.15 + 0.85 * smoothstep(0.5, 0.8, dist);
+  float dist = texture2D(u_image, v_texCoord).r;
+  float alpha = smoothstep(0.52, 0.6, dist);
+  float color = 0.15 + 0.85 * smoothstep(0.7, 0.75, dist);
   gl_FragColor.rgb = vec3(color, color, color);
   gl_FragColor.a = alpha * v_opacity * u_opacity;
 }

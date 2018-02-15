@@ -20,6 +20,8 @@ import RBush from '../../structs/RBush.js';
 import _ol_webgl_ from '../../webgl.js';
 import WebGLBuffer from '../../webgl/Buffer.js';
 
+import earcut from 'earcut';
+
 /**
  * @constructor
  * @extends {ol.render.webgl.Replay}

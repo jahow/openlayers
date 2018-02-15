@@ -14,6 +14,8 @@ import WebGLBuffer from '../../webgl/Buffer.js';
 import {fragment, vertex} from '../webgl/textreplay/defaultshader.js';
 import Locations from '../webgl/textreplay/defaultshader/Locations.js';
 import _ol_webgl_ from '../../webgl.js';
+import TinySDF from 'tiny-sdf';
+
 
 /**
  * @constructor
@@ -114,7 +116,6 @@ const WebGLTextReplay = function(tolerance, maxExtent) {
   this.scale = 1;
 
   this.opacity = 1;
-
 };
 
 inherits(WebGLTextReplay, WebGLTextureReplay);
@@ -256,9 +257,14 @@ WebGLTextReplay.prototype.addCharToAtlas_ = function(char) {
   if (char.length === 1) {
     const glyphAtlas = this.currAtlas_;
     const state = this.state_;
+    var size = state.font.match(/([0-9]{2})px/)
+    size = size ? parseInt(size[1]) : 12;
     const mCtx = this.measureCanvas_.getContext('2d');
-    mCtx.font = state.font;
-    const width = Math.ceil(mCtx.measureText(char).width * state.scale * 1.1);
+    mCtx.font = size + 'px Open Sans, sans-serif';
+    const width = Math.ceil(mCtx.measureText(char).width * state.scale) + 3;
+    // const width = 30;
+    // const height = 30;
+    const tinySdf = new TinySDF(size, 1, 8, .25, 'Open Sans, sans-serif', 'normal');
 
     const info = glyphAtlas.atlas.add(char, width, glyphAtlas.height,
       function(ctx, x, y) {
@@ -290,12 +296,14 @@ WebGLTextReplay.prototype.addCharToAtlas_ = function(char) {
         // if (state.fillColor) {
         //   ctx.fillText(char, x, y);
         // }
-        ctx.fillStyle = 'white';
-        ctx.shadowColor = 'white';
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.shadowBlur = 5;
-        ctx.fillText(char, x, y);
+        // ctx.fillStyle = 'white';
+        // ctx.shadowColor = 'white';
+        // ctx.shadowOffsetX = 0;
+        // ctx.shadowOffsetY = 0;
+        // ctx.shadowBlur = 5;
+        // ctx.fillText(char, x, y);
+        var values = tinySdf.draw(char);
+        ctx.putImageData(values, x, y, 0, 0, width, glyphAtlas.height);
       });
 
     if (info) {
