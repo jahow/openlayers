@@ -261,32 +261,38 @@ WebGLTextReplay.prototype.addCharToAtlas_ = function(char) {
       function(ctx, x, y) {
         //Parameterize the canvas
         ctx.font = /** @type {string} */ (state.font);
-        ctx.fillStyle = state.fillColor;
-        ctx.strokeStyle = state.strokeColor;
-        ctx.lineWidth = state.lineWidth;
-        ctx.lineCap = /*** @type {string} */ (state.lineCap);
-        ctx.lineJoin = /** @type {string} */ (state.lineJoin);
-        ctx.miterLimit = /** @type {number} */ (state.miterLimit);
+        // ctx.fillStyle = state.fillColor;
+        // ctx.strokeStyle = state.strokeColor;
+        // ctx.lineWidth = state.lineWidth;
+        // ctx.lineCap = /*** @type {string} */ (state.lineCap);
+        // ctx.lineJoin = /** @type {string} */ (state.lineJoin);
+        // ctx.miterLimit = /** @type {number} */ (state.miterLimit);
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        if (CANVAS_LINE_DASH && state.lineDash) {
-          //FIXME: use pixelRatio
-          ctx.setLineDash(state.lineDash);
-          ctx.lineDashOffset = /** @type {number} */ (state.lineDashOffset);
-        }
-        if (state.scale !== 1) {
-          //FIXME: use pixelRatio
-          ctx.setTransform(/** @type {number} */ (state.scale), 0, 0,
-            /** @type {number} */ (state.scale), 0, 0);
-        }
+        // if (CANVAS_LINE_DASH && state.lineDash) {
+        //   //FIXME: use pixelRatio
+        //   ctx.setLineDash(state.lineDash);
+        //   ctx.lineDashOffset = /** @type {number} */ (state.lineDashOffset);
+        // }
+        // if (state.scale !== 1) {
+        //   //FIXME: use pixelRatio
+        //   ctx.setTransform(/** @type {number} */ (state.scale), 0, 0,
+        //     /** @type {number} */ (state.scale), 0, 0);
+        // }
 
         //Draw the character on the canvas
-        if (state.strokeColor) {
-          ctx.strokeText(char, x, y);
-        }
-        if (state.fillColor) {
-          ctx.fillText(char, x, y);
-        }
+        // if (state.strokeColor) {
+        //   ctx.strokeText(char, x, y);
+        // }
+        // if (state.fillColor) {
+        //   ctx.fillText(char, x, y);
+        // }
+        ctx.fillStyle = 'white';
+        ctx.shadowColor = 'white';
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.shadowBlur = 3;
+        ctx.fillText(char, x, y);
       });
 
     if (info) {
