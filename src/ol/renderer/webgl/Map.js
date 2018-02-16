@@ -92,6 +92,7 @@ const WebGLMapRenderer = function(container, map) {
    * @type {ol.webgl.Context}
    */
   this.context_ = new WebGLContext(this.canvas_, this.gl_);
+  this.clipTileContext_.crossOrigin = 'anonymous';
 
   listen(this.canvas_, ContextEventType.LOST,
     this.handleWebGLContextLost, this);
