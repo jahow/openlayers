@@ -124,6 +124,7 @@ WebGLTileLayerRenderer['create'] = function(mapRenderer, layer) {
  */
 WebGLTileLayerRenderer.prototype.disposeInternal = function() {
   const context = this.mapRenderer.getContext();
+  context.crossOrigin = 'anonymous';
   context.deleteBuffer(this.renderArrayBuffer_);
   WebGLLayerRenderer.prototype.disposeInternal.call(this);
 };

@@ -1,5 +1,5 @@
 
-import {inherits} from '../../index.js';
+import {getUid, inherits} from '../../index.js';
 import LayerType from '../../LayerType.js';
 import TileState from '../../TileState.js';
 import ViewHint from '../../ViewHint.js';
@@ -14,6 +14,7 @@ import RendererType from '../Type.js';
 import WebGLTileLayerRenderer from '../webgl/TileLayer.js';
 import {defaultOrder as defaultRenderOrder, getSquaredTolerance as getSquaredRenderTolerance, getTolerance as getRenderTolerance, renderFeature} from '../vector.js';
 import _ol_transform_ from '../../transform.js';
+import TileRange from '../../TileRange.js';
 
 
 /**
@@ -58,12 +59,6 @@ const WebGLVectorTileLayerRenderer = function(mapRenderer, tileLayer) {
 
   /**
    * @private
-   * @type {ol.render.webgl.ReplayGroup}
-   */
-  this.replayGroup_ = null;
-
-  /**
-   * @private
    * @type {ol.Transform}
    */
   this.tmpTransform_ = _ol_transform_.create();
@@ -72,13 +67,25 @@ const WebGLVectorTileLayerRenderer = function(mapRenderer, tileLayer) {
    * @protected
    * @type {number}
    */
-  this.zDirection = 0;
+  this.zDirection = 1;
 
   /**
    * @private
    * @type {!Array.<ol.Tile>}
    */
   this.renderedTiles_ = [];
+
+  /**
+   * @protected
+   * @type {ol.Extent}
+   */
+  this.tmpExtent = createEmpty();
+
+  /**
+   * @private
+   * @type {ol.TileRange}
+   */
+  this.tmpTileRange_ = new TileRange(0, 0, 0, 0);
 };
 inherits(WebGLVectorTileLayerRenderer, WebGLTileLayerRenderer);
 
@@ -106,6 +113,19 @@ WebGLVectorTileLayerRenderer['create'] = function(mapRenderer, layer) {
     /** @type {ol.layer.VectorTile} */ (layer));
 };
 
+/**
+ * @private
+ * @param {ol.Tile} tile Tile.
+ * @return {boolean} Tile is drawable.
+ */
+WebGLVectorTileLayerRenderer.prototype.isDrawableTile_ = function(tile) {
+  const tileState = tile.getState();
+  const useInterimTilesOnError = this.getLayer().getUseInterimTilesOnError();
+  return tileState == TileState.LOADED ||
+      tileState == TileState.EMPTY ||
+      tileState == TileState.ERROR && !useInterimTilesOnError;
+};
+
 
 /**
  * @inheritDoc
@@ -130,9 +150,9 @@ WebGLVectorTileLayerRenderer.prototype.composeFrame = function(frameState, layer
 
   for (var i = tiles.length - 1; i >= 0; --i) {
     var tile = /** @type {ol.VectorImageTile} */ (tiles[i]);
-    if (tile.getState() == TileState.ABORT) {
-      continue;
-    }
+    // if (tile.getState() == TileState.ABORT) {
+    //   continue;
+    // }
     var tileCoord = tile.tileCoord;
     // var worldOffset = tileGrid.getTileCoordExtent(tileCoord)[0] -
     //     tileGrid.getTileCoordExtent(tile.tileCoord)[0];
@@ -144,7 +164,7 @@ WebGLVectorTileLayerRenderer.prototype.composeFrame = function(frameState, layer
       }
       var replayGroup = sourceTile.getReplayGroup(layer, tileCoord.toString());
       if (!replayGroup) {
-        console.warn(' > no replay group available (this should not happen)');
+        // console.warn(' > no replay group available (this should not happen)');
         continue;
       }
       if (replayGroup && !replayGroup.isEmpty()) {
@@ -194,22 +214,108 @@ WebGLVectorTileLayerRenderer.prototype.prepareFrame = function(frameState, layer
   var layerRenderOrder = tileLayer.getRenderOrder();
   var tileGrid = tileSource.getTileGridForProjection(projection);
   var z = tileGrid.getZForResolution(resolution, this.zDirection);
+  const tileResolution = tileGrid.getResolution(z);
+  const tilePixelRatio = tileSource.getTilePixelRatio(pixelRatio);
   var tileRange = tileGrid.getTileRangeForExtentAndZ(frameStateExtent, z);
 
-  if (layerRenderOrder === undefined) {
-    layerRenderOrder = defaultRenderOrder;
-  }
+  // if (layerRenderOrder === undefined) {
+  //   layerRenderOrder = defaultRenderOrder;
+  // }
 
   var extent = buffer(frameStateExtent,
       layerRenderBuffer * resolution);
 
   this.renderedTiles_.length = 0;
   var tile, x, y;
+  // for (x = tileRange.minX; x <= tileRange.maxX; ++x) {
+  //   for (y = tileRange.minY; y <= tileRange.maxY; ++y) {
+  //     tile = tileSource.getTile(z, x, y, pixelRatio, projection);
+  //     console.log('creating replay group for tile at x=' + x + ' y=' + y);
+  //     this.renderedTiles_.push(tile);
+  //     this.createReplayGroup_(
+  //       /** @type {ol.VectorImageTile} */(tile),
+  //       frameState,
+  //       context);
+  //   }
+  // }
+
+  const tilesToDrawByZ = {};
+  tilesToDrawByZ[z] = {};
+  let newTiles = false;
+
+  const tmpExtent = this.tmpExtent_;
+  const tmpTileRange = this.tmpTileRange_;
+
+  const findLoadedTiles = this.createLoadedTileFinder(
+    tileSource, projection, tilesToDrawByZ);
+
   for (x = tileRange.minX; x <= tileRange.maxX; ++x) {
     for (y = tileRange.minY; y <= tileRange.maxY; ++y) {
       tile = tileSource.getTile(z, x, y, pixelRatio, projection);
-      console.log('creating replay group for tile at x=' + x + ' y=' + y);
+      if (tile.getState() == TileState.ERROR) {
+        if (!tileLayer.getUseInterimTilesOnError()) {
+          // When useInterimTilesOnError is false, we consider the error tile as loaded.
+          tile.setState(TileState.LOADED);
+        } else if (tileLayer.getPreload() > 0) {
+          // Preloaded tiles for lower resolutions might have finished loading.
+          newTiles = true;
+        }
+      }
+      if (!this.isDrawableTile_(tile)) {
+        tile = tile.getInterimTile();
+      }
+      if (this.isDrawableTile_(tile)) {
+        const uid = getUid(this);
+        if (tile.getState() == TileState.LOADED) {
+          tilesToDrawByZ[z][tile.tileCoord.toString()] = tile;
+          const inTransition = tile.inTransition(uid);
+          if (!newTiles && (inTransition || this.renderedTiles.indexOf(tile) === -1)) {
+            newTiles = true;
+          }
+        }
+        if (tile.getAlpha(uid, frameState.time) === 1) {
+          // don't look for alt tiles if alpha is 1
+          continue;
+        }
+      }
+
+      const childTileRange = tileGrid.getTileCoordChildTileRange(
+        tile.tileCoord, tmpTileRange, tmpExtent);
+      let covered = false;
+      if (childTileRange) {
+        covered = findLoadedTiles(z + 1, childTileRange);
+      }
+      if (!covered) {
+        tileGrid.forEachTileCoordParentTileRange(
+          tile.tileCoord, findLoadedTiles, null, tmpTileRange, tmpExtent);
+      }
+
+    }
+  }
+
+  const zs = Object.keys(tilesToDrawByZ).map(Number);
+  zs.sort(function(a, b) {
+    if (a === z) {
+      return 1;
+    } else if (b === z) {
+      return -1;
+    } else {
+      return a > b ? 1 : a < b ? -1 : 0;
+    }
+  });
+  let currentResolution, currentScale, currentTilePixelSize, currentZ, i, ii;
+  let tileExtent, tileGutter, tilesToDraw, w, h;
+  for (i = 0, ii = zs.length; i < ii; ++i) {
+    currentZ = zs[i];
+    currentTilePixelSize = tileSource.getTilePixelSize(currentZ, pixelRatio, projection);
+    currentResolution = tileGrid.getResolution(currentZ);
+    currentScale = currentResolution / tileResolution;
+    tileGutter = tilePixelRatio * tileSource.getGutter(projection);
+    tilesToDraw = tilesToDrawByZ[currentZ];
+    for (const tileCoordKey in tilesToDraw) {
+      tile = tilesToDraw[tileCoordKey];
       this.renderedTiles_.push(tile);
+      console.log('creating replay group for tile at ' + tileCoordKey);
       this.createReplayGroup_(
         /** @type {ol.VectorImageTile} */(tile),
         frameState,
@@ -269,6 +375,9 @@ WebGLVectorTileLayerRenderer.prototype.createReplayGroup_ = function(
   // var zIndexKeys = {};
   for (var t = 0, tt = tile.tileKeys.length; t < tt; ++t) {
     var sourceTile = tile.getTile(tile.tileKeys[t]);
+    if (sourceTile.getReplayGroup(layer, tile.tileCoord)) {
+      return;
+    }
     console.log(' > creating replay group for sourceTile ' + tile.tileKeys[t]);
     if (sourceTile.getState() == TileState.ERROR) {
       console.log(' > sourceTile in error, skipping');
@@ -305,7 +414,7 @@ WebGLVectorTileLayerRenderer.prototype.createReplayGroup_ = function(
       if (styles) {
         var dirty = this.renderFeature(
           /** @type {ol.Feature} */(feature), resolution, pixelRatio, styles, replayGroup);
-        replayState.dirty = replayState.dirty || dirty;
+        // replayState.dirty = replayState.dirty || dirty;
       }
     };
 
@@ -316,10 +425,10 @@ WebGLVectorTileLayerRenderer.prototype.createReplayGroup_ = function(
     }
     console.log(' > ' + features.length + ' features found in sourceTile');
 
-    if (renderOrder && renderOrder !== replayState.renderedRenderOrder) {
-      console.log(' > sorting features');
-      features.sort(renderOrder);
-    }
+    // if (renderOrder && renderOrder !== replayState.renderedRenderOrder) {
+    //   console.log(' > sorting features');
+    //   features.sort(renderOrder);
+    // }
     var feature;
     console.log(' > saving features in replaygroup...');
     for (var i = 0, ii = features.length; i < ii; ++i) {
@@ -333,9 +442,9 @@ WebGLVectorTileLayerRenderer.prototype.createReplayGroup_ = function(
         }
         feature.getGeometry().transform(tileProjection, projection);
       }
-      if (!bufferedExtent || intersects(bufferedExtent, feature.getGeometry().getExtent())) {
+      // if (!bufferedExtent || intersects(bufferedExtent, feature.getGeometry().getExtent())) {
         renderFeature.call(this, feature);
-      }
+      // }
     }
     console.log('                           ...done');
     replayGroup.finish(context);
