@@ -154,8 +154,12 @@ class CanvasMapRenderer extends MapRenderer {
           layerState.sourceState != SourceState.READY) {
         continue;
       }
-      if (layerRenderer.prepareFrame(frameState, layerState)) {
+
+      var needCompose = layerRenderer.prepareFrame(frameState, layerState);
+      if (needCompose) {
+        PERF_ANALYZER.beginMeasurement('compose frame', '#8bc34a');
         layerRenderer.composeFrame(frameState, layerState, context);
+        PERF_ANALYZER.endMeasurement('compose frame');
       }
     }
 

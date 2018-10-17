@@ -1,0 +1,1 @@
+../../node_modules/rendering-analyzer/dist/index.js

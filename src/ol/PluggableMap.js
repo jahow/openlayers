@@ -1179,6 +1179,8 @@ class PluggableMap extends BaseObject {
    * @private
    */
   renderFrame_(time) {
+    PERF_ANALYZER.startFrame();
+
     let viewState;
 
     const size = this.getSize();
@@ -1257,6 +1259,7 @@ class PluggableMap extends BaseObject {
 
     setTimeout(this.handlePostRender.bind(this), 0);
 
+    PERF_ANALYZER.endFrame();
   }
 
   /**

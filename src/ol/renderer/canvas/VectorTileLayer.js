@@ -107,9 +107,14 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
   getTile(z, x, y, pixelRatio, projection) {
     const tile = super.getTile(z, x, y, pixelRatio, projection);
     if (tile.getState() === TileState.LOADED) {
+
+      PERF_ANALYZER.beginMeasurement('prepare frame (VT layer) - create replay group', '#ffea16');
       this.createReplayGroup_(/** @type {import("../../VectorImageTile.js").default} */ (tile), pixelRatio, projection);
+      PERF_ANALYZER.endMeasurement();
       if (this.context) {
+        PERF_ANALYZER.beginMeasurement('prepare frame (VT layer) - render tile image', '#4636ff');
         this.renderTileImage_(/** @type {import("../../VectorImageTile.js").default} */ (tile), pixelRatio, projection);
+        PERF_ANALYZER.endMeasurement();
       }
     }
     return tile;
@@ -127,6 +132,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
    * @inheritDoc
    */
   prepareFrame(frameState, layerState) {
+    PERF_ANALYZER.beginMeasurement('prepare frame (VT layer)', '#795548');
     const layer = /** @type {import("../../layer/Vector.js").default} */ (this.getLayer());
     const layerRevision = layer.getRevision();
     if (this.renderedLayerRevision_ != layerRevision) {
@@ -140,6 +146,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
       }
     }
     this.renderedLayerRevision_ = layerRevision;
+    PERF_ANALYZER.endMeasurement();
     return super.prepareFrame(frameState, layerState);
   }
 
@@ -159,6 +166,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
         replayState.renderedRenderOrder == renderOrder) {
       return;
     }
+    PERF_ANALYZER.signalEvent('vector tile replay group created', '#0014e9', '◆');
 
     const source = /** @type {import("../../source/VectorTile.js").default} */ (layer.getSource());
     const sourceTileGrid = source.getTileGrid();
@@ -387,7 +395,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
           for (let j = 0, jj = clips.length; j < jj; ++j) {
             const clip = clips[j];
             if (currentZ < zs[j]) {
-              context.beginPath();
+              context.beginPath(); 
               // counter-clockwise (outer ring) for current tile
               context.moveTo(currentClip[0], currentClip[1]);
               context.lineTo(currentClip[2], currentClip[3]);

@@ -133,7 +133,7 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
    * @inheritDoc
    */
   prepareFrame(frameState, layerState) {
-
+    PERF_ANALYZER.beginMeasurement('prepare frame (generic tile layer) - init', '#ffeb3b');
     const pixelRatio = frameState.pixelRatio;
     const size = frameState.size;
     const viewState = frameState.viewState;
@@ -154,6 +154,7 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
       extent = getIntersection(extent, layerState.extent);
     }
     if (isEmpty(extent)) {
+      PERF_ANALYZER.endMeasurement();
       // Return false to prevent the rendering of the layer.
       return false;
     }
@@ -179,12 +180,14 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
     const tmpTileRange = this.tmpTileRange_;
     this.newTiles_ = false;
     let tile, x, y;
+    PERF_ANALYZER.endMeasurement();
     for (x = tileRange.minX; x <= tileRange.maxX; ++x) {
       for (y = tileRange.minY; y <= tileRange.maxY; ++y) {
         if (Date.now() - frameState.time > 16 && animatingOrInteracting) {
           continue;
         }
         tile = this.getTile(z, x, y, pixelRatio, projection);
+        PERF_ANALYZER.beginMeasurement('prepare frame (generic tile layer) - get tile followup', '#ff3d8d');
         if (this.isDrawableTile_(tile)) {
           const uid = getUid(this);
           if (tile.getState() == TileState.LOADED) {
@@ -196,6 +199,7 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
           }
           if (tile.getAlpha(uid, frameState.time) === 1) {
             // don't look for alt tiles if alpha is 1
+            PERF_ANALYZER.endMeasurement();
             continue;
           }
         }
@@ -211,8 +215,10 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
             tile.tileCoord, findLoadedTiles, null, tmpTileRange, tmpExtent);
         }
 
+        PERF_ANALYZER.endMeasurement();
       }
     }
+
 
     const renderedResolution = tileResolution * pixelRatio / tilePixelRatio * oversampling;
     if (!(this.renderedResolution && Date.now() - frameState.time > 16 && animatingOrInteracting) && (
@@ -222,6 +228,8 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
           oversampling != this.oversampling_ ||
           !animatingOrInteracting && renderedResolution != this.renderedResolution
     )) {
+
+      PERF_ANALYZER.beginMeasurement('prepare frame (generic tile layer) - tile rendering', '#ffc107');
 
       const context = this.context;
       if (context) {
@@ -277,7 +285,11 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
       this.renderedRevision = sourceRevision;
       this.renderedResolution = tileResolution * pixelRatio / tilePixelRatio * oversampling;
       this.renderedExtent_ = imageExtent;
+
+      PERF_ANALYZER.endMeasurement();
     }
+
+    PERF_ANALYZER.beginMeasurement('prepare frame (generic tile layer) - manage tile pyramid', '#ff5722');
 
     const scale = this.renderedResolution / viewResolution;
     const transform = composeTransform(this.imageTransform_,
@@ -297,6 +309,8 @@ class CanvasTileLayerRenderer extends IntermediateCanvasRenderer {
     this.manageTilePyramid(frameState, tileSource, tileGrid, pixelRatio,
       projection, extent, z, tileLayer.getPreload());
     this.scheduleExpireCache(frameState, tileSource);
+
+    PERF_ANALYZER.endMeasurement();
 
     return this.renderedTiles.length > 0;
   }
