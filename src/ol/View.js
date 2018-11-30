@@ -279,8 +279,6 @@ class View extends BaseObject {
      * @type {Object<string, *>}
      */
     const properties = {};
-    properties[ViewProperty.CENTER] = options.center !== undefined ?
-      options.center : null;
 
     const resolutionConstraintInfo = createResolutionConstraint(options);
 
@@ -329,17 +327,19 @@ class View extends BaseObject {
     };
 
     if (options.resolution !== undefined) {
-      properties[ViewProperty.RESOLUTION] = options.resolution;
+      this.setResolution(options.resolution);
     } else if (options.zoom !== undefined) {
-      properties[ViewProperty.RESOLUTION] = this.getResolutionForZoom(options.zoom);
+      this.setResolution(this.getResolutionForZoom(options.zoom));
 
       if (this.resolutions_) { // in case map zoom is out of min/max zoom range
-        properties[ViewProperty.RESOLUTION] = clamp(
+        this.setResolution(clamp(
           Number(this.getResolution() || properties[ViewProperty.RESOLUTION]),
-          this.minResolution_, this.maxResolution_);
+          this.minResolution_, this.maxResolution_));
       }
+    } else {
+      this.setResolution(this.maxResolution_);
     }
-    properties[ViewProperty.ROTATION] = options.rotation !== undefined ? options.rotation : 0;
+    this.setRotation(options.rotation !== undefined ? options.rotation : 0);
     this.setProperties(properties);
 
     if (options.center) {
