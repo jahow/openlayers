@@ -7,6 +7,7 @@ import {easeOut} from '../easing.js';
 import {noModifierKeys} from '../events/condition.js';
 import {FALSE} from '../functions.js';
 import PointerInteraction, {centroid as centroidFromPointers} from './Pointer.js';
+import ViewProperty from '../ViewProperty';
 
 
 /**
@@ -44,7 +45,17 @@ class DragPan extends PointerInteraction {
     /**
      * @type {import("../pixel.js").Pixel}
      */
-    this.lastCentroid = null;
+    this.initialCentroid = null;
+
+    /**
+     * @type {import("../coordinate.js").Coordinate}
+     */
+    this.initialCenter = null;
+
+    /**
+     * @type {import("../coordinate.js").Coordinate}
+     */
+    this.lastCenter = null;
 
     /**
      * @type {number}
@@ -80,15 +91,16 @@ class DragPan extends PointerInteraction {
       if (view.getAnimating()) {
         view.cancelAnimations();
       }
-      if (this.lastCentroid) {
-        const deltaX = this.lastCentroid[0] - centroid[0];
-        const deltaY = centroid[1] - this.lastCentroid[1];
+      if (this.initialCentroid) {
+        const deltaX = this.initialCentroid[0] - centroid[0];
+        const deltaY = centroid[1] - this.initialCentroid[1];
         const map = mapBrowserEvent.map;
         const view = map.getView();
         const center = [deltaX, deltaY];
         scaleCoordinate(center, view.getResolution());
         rotateCoordinate(center, view.getRotation());
-        addCoordinate(center, view.getCenter());
+        addCoordinate(center, this.initialCenter);
+        this.lastCenter = center;
         view.setCenter(center);
       }
     } else if (this.kinetic_) {
@@ -96,7 +108,6 @@ class DragPan extends PointerInteraction {
       // after one finger down, tiny drag, second finger down
       this.kinetic_.begin();
     }
-    this.lastCentroid = centroid;
     this.lastPointersCount_ = targetPointers.length;
   }
 
@@ -107,22 +118,33 @@ class DragPan extends PointerInteraction {
     const map = mapBrowserEvent.map;
     const view = map.getView();
     if (this.targetPointers.length === 0) {
-      view.setHint(ViewHint.INTERACTING, -1);
       if (!this.noKinetic_ && this.kinetic_ && this.kinetic_.end()) {
         const distance = this.kinetic_.getDistance();
         const angle = this.kinetic_.getAngle();
-        const center = /** @type {!import("../coordinate.js").Coordinate} */ (view.getCenter());
+        const center = this.lastCenter;
         const centerpx = map.getPixelFromCoordinate(center);
         const dest = map.getCoordinateFromPixel([
           centerpx[0] - distance * Math.cos(angle),
           centerpx[1] - distance * Math.sin(angle)
         ]);
+        // we force the view center without constraint to have
+        // the proper initial center when animating
+        view.set(ViewProperty.CENTER, this.lastCenter);
         view.animate({
           center: dest,
           duration: 500,
           easing: easeOut
-        });
+        }, function(succeeded) {
+          // we force the final view center so that
+          // the constraint resolution plays from the correct point
+          if (succeeded) {
+            view.set(ViewProperty.CENTER, dest);
+          }
+          view.setHint(ViewHint.INTERACTING, -1);
+        }.bind(this));
       } else {
+        view.set(ViewProperty.CENTER, this.lastCenter);
+        view.setHint(ViewHint.INTERACTING, -1);
         view.resolveConstraints();
       }
       return false;
@@ -132,7 +154,8 @@ class DragPan extends PointerInteraction {
         // after one finger up, tiny drag, second finger up
         this.kinetic_.begin();
       }
-      this.lastCentroid = null;
+      this.initialCentroid = null;
+      this.initialCenter = null;
       return true;
     }
   }
@@ -144,11 +167,18 @@ class DragPan extends PointerInteraction {
     if (this.targetPointers.length > 0 && this.condition_(mapBrowserEvent)) {
       const map = mapBrowserEvent.map;
       const view = map.getView();
-      this.lastCentroid = null;
 
       // stop any current animation
       this.getMap().getView().setHint(ViewHint.INTERACTING, 1);
-      view.setCenter(mapBrowserEvent.frameState.viewState.center);
+
+      if (view.getAnimating()) {
+        view.cancelAnimations();
+      }
+
+      const targetPointers = this.targetPointers;
+      this.initialCentroid = centroidFromPointers(targetPointers);
+      this.initialCenter = view.getCenter();
+      this.lastCenter = view.getCenter();
 
       if (this.kinetic_) {
         this.kinetic_.begin();

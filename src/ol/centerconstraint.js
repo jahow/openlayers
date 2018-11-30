@@ -6,8 +6,7 @@ import {createEmpty, getForViewAndSize, getHeight, getWidth} from './extent';
 
 
 /**
- * @typedef {function((import("./coordinate.js").Coordinate|undefined),number,number,(import("./size.js").Size),boolean):
- *  (import("./coordinate.js").Coordinate|undefined)} Type
+ * @typedef {function((import("./coordinate.js").Coordinate|undefined),number,number,(import("./size.js").Size),boolean): (import("./coordinate.js").Coordinate|undefined)} Type
  */
 
 const tmpExtent = createEmpty();
@@ -15,9 +14,11 @@ const tmpExtent = createEmpty();
 
 /**
  * @param {import("./extent.js").Extent} extent Extent.
+ * @param {boolean} elastic If true the center can be slightly "forced" outside of the
+ * constraint extent.
  * @return {Type} The constraint.
  */
-export function createExtent(extent) {
+export function createExtent(extent, elastic) {
   return (
     /**
      * @param {import("./coordinate.js").Coordinate=} center Center.
@@ -38,10 +39,23 @@ export function createExtent(extent) {
           viewHeight = getHeight(viewExtent);
         }
 
-        return [
-          clamp(center[0], extent[0] + viewWidth / 2, extent[2] - viewWidth / 2),
-          clamp(center[1], extent[1] + viewHeight / 2, extent[3] - viewHeight / 2)
-        ];
+        const minX = extent[0] + viewWidth / 2;
+        const maxX = extent[2] - viewWidth / 2;
+        const minY = extent[1] + viewHeight / 2;
+        const maxY = extent[3] - viewHeight / 2;
+        let x = clamp(center[0], minX, maxX);
+        let y = clamp(center[1], minY, maxY);
+        let ratio = 15 * resolution;
+
+        // during an interaction, allow some overscroll
+        if (whileInteracting && elastic) {
+          x += -ratio * Math.log(1 + Math.max(0, minX - center[0]) / ratio) +
+            ratio * Math.log(1 + Math.max(0, center[0] - maxX) / ratio);
+          y += -ratio * Math.log(1 + Math.max(0, minY - center[1]) / ratio) +
+            ratio * Math.log(1 + Math.max(0, center[1] - maxY) / ratio);
+        }
+
+        return [x, y];
       } else {
         return undefined;
       }

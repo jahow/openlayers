@@ -98,6 +98,8 @@ import {equals} from './coordinate';
  * @property {boolean} [constrainOnlyCenter=false] If true, the extent constraint
  * will only be applied on the view center, and will not take the viewport size
  * into account.
+ * @property {boolean} [elasticConstraint=false] If true, center and resolution
+ * constraints can be slightly "forced" when interacting
  * @property {number} [maxResolution] The maximum resolution used to determine
  * the resolution constraint. It is used together with `minResolution` (or
  * `maxZoom`) and `zoomFactor`. If unspecified it is calculated in such a way
@@ -1199,10 +1201,10 @@ class View extends BaseObject {
       this.cancelAnimations();
     }
 
-    // console.log(this.getHints());
     this.set(ViewProperty.ROTATION, this.constrainRotation(this.getRotation(), interacting));
     this.set(ViewProperty.RESOLUTION, this.constrainResolution(this.getResolution(), interacting));
     this.set(ViewProperty.CENTER, this.constrainCenter(this.getCenter(), interacting));
+
   }
 
   /**
@@ -1223,6 +1225,8 @@ class View extends BaseObject {
       if (this.getAnimating()) {
         this.cancelAnimations();
       }
+
+      console.log('resolve - current center: ', this.getCenter());
 
       this.animate({
         rotation: newRotation,
@@ -1262,7 +1266,8 @@ function animationCallback(callback, returnValue) {
  */
 export function createCenterConstraint(options) {
   if (options.extent !== undefined) {
-    return createExtent(options.extent);
+    return createExtent(options.extent,
+      options.elasticConstraint !== undefined ? options.elasticConstraint : true);
   } else {
     return centerNone;
   }
