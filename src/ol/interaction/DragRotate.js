@@ -82,6 +82,7 @@ class DragRotate extends PointerInteraction {
       const delta = theta - this.lastAngle_;
       const rotation = view.getRotation();
       rotateWithoutConstraints(view, rotation - delta);
+      view.setCenter(view.constrainCenter(view.getCenter()));
     }
     this.lastAngle_ = theta;
   }
