@@ -21,6 +21,8 @@ import {clamp, modulo} from './math.js';
 import {assign} from './obj.js';
 import {createProjection, METERS_PER_UNIT} from './proj.js';
 import Units from './proj/Units.js';
+import {easeOut} from './easing';
+import {equals} from './coordinate';
 
 
 /**
@@ -93,6 +95,9 @@ import Units from './proj/Units.js';
  * `false`.
  * @property {import("./extent.js").Extent} [extent] The extent that constrains the
  * center, in other words, center cannot be set outside this extent.
+ * @property {boolean} [constrainOnlyCenter=false] If true, the extent constraint
+ * will only be applied on the view center, and will not take the viewport size
+ * into account.
  * @property {number} [maxResolution] The maximum resolution used to determine
  * the resolution constraint. It is used together with `minResolution` (or
  * `maxZoom`) and `zoomFactor`. If unspecified it is calculated in such a way
@@ -656,7 +661,8 @@ class View extends BaseObject {
    * @api
    */
   constrainCenter(center) {
-    return this.constraints_.center(center);
+    return this.constraints_.center(center, this.getResolution(), this.getRotation(),
+      this.getSizeFromViewport_());
   }
 
   /**
@@ -670,7 +676,13 @@ class View extends BaseObject {
   constrainResolution(resolution, opt_delta, opt_direction) {
     const delta = opt_delta || 0;
     const direction = opt_direction || 0;
-    return this.constraints_.resolution(resolution, delta, direction);
+    const size = this.getSizeFromViewport_();
+    const rotation = this.getRotation() || 0;
+    const rotatedSize = [
+      Math.abs(size[0] * Math.cos(rotation)) + Math.abs(size[1] * Math.sin(rotation)),
+      Math.abs(size[0] * Math.sin(rotation)) + Math.abs(size[1] * Math.cos(rotation))
+    ];
+    return this.constraints_.resolution(resolution, delta, direction, rotatedSize);
   }
 
   /**
@@ -1198,7 +1210,7 @@ function animationCallback(callback, returnValue) {
  */
 export function createCenterConstraint(options) {
   if (options.extent !== undefined) {
-    return createExtent(options.extent);
+    return createExtent(options.extent, options.constrainOnlyCenter);
   } else {
     return centerNone;
   }
@@ -1235,7 +1247,7 @@ export function createResolutionConstraint(options) {
     minResolution = resolutions[maxZoom] !== undefined ?
       resolutions[maxZoom] : resolutions[resolutions.length - 1];
     resolutionConstraint = createSnapToResolutions(
-      resolutions);
+      resolutions, !options.constrainOnlyCenter && options.extent);
   } else {
     // calculate the default min and max resolution
     const projection = createProjection(options.projection, 'EPSG:3857');
@@ -1280,7 +1292,8 @@ export function createResolutionConstraint(options) {
     minResolution = maxResolution / Math.pow(zoomFactor, maxZoom - minZoom);
 
     resolutionConstraint = createSnapToPower(
-      zoomFactor, maxResolution, maxZoom - minZoom);
+      zoomFactor, maxResolution, maxZoom - minZoom,
+      !options.constrainOnlyCenter && options.extent);
   }
   return {constraint: resolutionConstraint, maxResolution: maxResolution,
     minResolution: minResolution, minZoom: minZoom, zoomFactor: zoomFactor};
