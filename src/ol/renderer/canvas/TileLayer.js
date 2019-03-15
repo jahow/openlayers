@@ -7,6 +7,7 @@ import TileState from '../../TileState.js';
 import {createEmpty, getIntersection, getTopLeft} from '../../extent.js';
 import CanvasLayerRenderer from './Layer.js';
 import {apply as applyTransform, compose as composeTransform, makeInverse, toString as transformToString} from '../../transform.js';
+import {getWidth} from '../../extent';
 
 /**
  * @classdesc
@@ -145,6 +146,9 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
     const tileGrid = tileSource.getTileGridForProjection(projection);
     const z = tileGrid.getZForResolution(viewResolution, this.zDirection);
     const tileResolution = tileGrid.getResolution(z);
+
+    const projExtent = projection.getExtent();
+
     let extent = frameState.extent;
 
     if (layerState.extent) {
@@ -277,12 +281,21 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       ]);
       const tileGutter = tilePixelRatio * tileSource.getGutterForProjection(projection);
       const tilesToDraw = tilesToDrawByZ[currentZ];
+
+      const extentShiftX = getWidth(projExtent) / currentResolution / currentTilePixelSize[0];
+
       for (const tileCoordKey in tilesToDraw) {
         const tile = tilesToDraw[tileCoordKey];
         const tileCoord = tile.tileCoord;
 
+        // Take into account tiles outside of extent (must be shifted by extent width)
+        this.tmpTileRange_ = tileGrid.getTileRangeForExtentAndZ(projExtent, currentZ, this.tmpTileRange_);
+        const tileCountX = this.tmpTileRange_.getWidth();
+        const extentShiftAmount = Math.floor(tileCoord[1] / tileCountX);
+        const wrappedX = tileCoord[1] - extentShiftAmount * tileCountX;
+
         // Calculate integer positions and sizes so that tiles align
-        const floatX = (origin[0] - (originTileCoord[1] - tileCoord[1]) * dx);
+        const floatX = (origin[0] - (originTileCoord[1] - wrappedX - extentShiftX * extentShiftAmount) * dx);
         const nextX = Math.round(floatX + dx);
         const floatY = (origin[1] - (originTileCoord[2] - tileCoord[2]) * dy);
         const nextY = Math.round(floatY + dy);
