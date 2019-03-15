@@ -9,13 +9,18 @@ import {createOrUpdate, getTopLeft} from '../extent.js';
 import {clamp} from '../math.js';
 import {toSize} from '../size.js';
 import {createOrUpdate as createOrUpdateTileCoord} from '../tilecoord.js';
+import {getWidth} from '../extent';
 
 
 /**
- * @private
  * @type {import("../tilecoord.js").TileCoord}
  */
 const tmpTileCoord = [0, 0, 0];
+
+/**
+ * @type {import("../coordinate.js").Coordinate}
+ */
+const tmpCoord = [0, 0, 0];
 
 
 /**
@@ -349,16 +354,51 @@ class TileGrid {
 
   /**
    * @param {import("../tilecoord.js").TileCoord} tileCoord Tile coordinate.
+   * @param {import("../coordinate.js").Coordinate} opt_coord Coordinate to reuse.
+   * @return {import("../coordinate.js").Coordinate} Coordinate.
+   */
+  getCoordFromTileCoord(tileCoord, opt_coord) {
+    const z = tileCoord[0];
+    const origin = this.getOrigin(z);
+    const resolution = this.getResolution(z);
+    const tileSize = toSize(this.getTileSize(z), this.tmpSize_);
+
+    const result = opt_coord !== undefined ? opt_coord : [];
+    const baseX = Math.floor(tileCoord[1]);
+    const baseY = Math.floor(tileCoord[2]);
+
+    result[0] = origin[0] + baseX * tileSize[0] * resolution;
+    result[1] = origin[1] - baseY * tileSize[1] * resolution;
+
+    // take into account global x-wrapping to support irregular tile grids
+    const extent = this.getExtent();
+    const tileRange = this.getFullTileRange(z);
+    if (extent && tileRange) {
+      const tileCountX = tileRange.getWidth();
+      const originTileCoord = this.getTileCoordForCoordAndZ(origin, z);
+      const extentShiftAmount = Math.floor((baseX - originTileCoord[1]) / tileCountX);
+      const wrappedX = baseX - extentShiftAmount * tileCountX;
+
+      result[0] = origin[0] + wrappedX * tileSize[0] * resolution +
+        extentShiftAmount * getWidth(extent);
+    }
+
+    // add the internal diff in the tile
+    result[0] += (tileCoord[1] - baseX) * tileSize[0] * resolution;
+    result[1] -= (tileCoord[2] - baseY) * tileSize[0] * resolution;
+
+    return result;
+  }
+
+  /**
+   * @param {import("../tilecoord.js").TileCoord} tileCoord Tile coordinate.
    * @return {import("../coordinate.js").Coordinate} Tile center.
    */
   getTileCoordCenter(tileCoord) {
-    const origin = this.getOrigin(tileCoord[0]);
-    const resolution = this.getResolution(tileCoord[0]);
-    const tileSize = toSize(this.getTileSize(tileCoord[0]), this.tmpSize_);
-    return [
-      origin[0] + (tileCoord[1] + 0.5) * tileSize[0] * resolution,
-      origin[1] - (tileCoord[2] + 0.5) * tileSize[1] * resolution
-    ];
+    tmpTileCoord[0] = tileCoord[0];
+    tmpTileCoord[1] = Math.floor(tileCoord[1]) + 0.5;
+    tmpTileCoord[2] = Math.floor(tileCoord[2]) + 0.5;
+    return this.getCoordFromTileCoord(tmpTileCoord);
   }
 
   /**
@@ -370,13 +410,17 @@ class TileGrid {
    * @api
    */
   getTileCoordExtent(tileCoord, opt_extent) {
-    const origin = this.getOrigin(tileCoord[0]);
-    const resolution = this.getResolution(tileCoord[0]);
-    const tileSize = toSize(this.getTileSize(tileCoord[0]), this.tmpSize_);
-    const minX = origin[0] + tileCoord[1] * tileSize[0] * resolution;
-    const minY = origin[1] - (tileCoord[2] + 1) * tileSize[1] * resolution;
-    const maxX = minX + tileSize[0] * resolution;
-    const maxY = minY + tileSize[1] * resolution;
+    tmpTileCoord[0] = tileCoord[0];
+    tmpTileCoord[1] = Math.floor(tileCoord[1]);
+    tmpTileCoord[2] = Math.floor(tileCoord[2]);
+    const topLeft = this.getCoordFromTileCoord(tmpTileCoord, tmpCoord);
+    const minX = topLeft[0];
+    const maxY = topLeft[1];
+    tmpTileCoord[1] = Math.floor(tileCoord[1] + 1);
+    tmpTileCoord[2] = Math.floor(tileCoord[2] + 1);
+    const bottomRight = this.getCoordFromTileCoord(tmpTileCoord, tmpCoord);
+    const maxX = bottomRight[0];
+    const minY = bottomRight[1];
     return createOrUpdate(minX, minY, maxX, maxY, opt_extent);
   }
 
@@ -417,10 +461,22 @@ class TileGrid {
 
     const adjustX = reverseIntersectionPolicy ? 0.5 : 0;
     const adjustY = reverseIntersectionPolicy ? 0.5 : 0;
-    const xFromOrigin = Math.floor((x - origin[0]) / resolution + adjustX);
+    let xFromOrigin = Math.floor((x - origin[0]) / resolution + adjustX);
     const yFromOrigin = Math.floor((origin[1] - y) / resolution + adjustY);
     let tileCoordX = scale * xFromOrigin / tileSize[0];
     let tileCoordY = scale * yFromOrigin / tileSize[1];
+
+    // take into account global x-wrapping to support irregular tile grids
+    const extent = this.getExtent();
+    const tileRange = this.getFullTileRange(z);
+    if (extent && tileRange) {
+      const tileCountX = tileRange.getWidth();
+      const extentWidth = getWidth(extent);
+      const extentShiftAmount = Math.floor((x - origin[0]) / extentWidth);
+      const wrappedX = x - extentShiftAmount * extentWidth;
+      xFromOrigin = Math.floor((wrappedX - origin[0]) / resolution + adjustX);
+      tileCoordX = xFromOrigin / tileSize[0] + tileCountX * extentShiftAmount;
+    }
 
     if (reverseIntersectionPolicy) {
       tileCoordX = Math.ceil(tileCoordX) - 1;
@@ -449,26 +505,8 @@ class TileGrid {
    * @private
    */
   getTileCoordForXYAndZ_(x, y, z, reverseIntersectionPolicy, opt_tileCoord) {
-    const origin = this.getOrigin(z);
     const resolution = this.getResolution(z);
-    const tileSize = toSize(this.getTileSize(z), this.tmpSize_);
-
-    const adjustX = reverseIntersectionPolicy ? 0.5 : 0;
-    const adjustY = reverseIntersectionPolicy ? 0.5 : 0;
-    const xFromOrigin = Math.floor((x - origin[0]) / resolution + adjustX);
-    const yFromOrigin = Math.floor((origin[1] - y) / resolution + adjustY);
-    let tileCoordX = xFromOrigin / tileSize[0];
-    let tileCoordY = yFromOrigin / tileSize[1];
-
-    if (reverseIntersectionPolicy) {
-      tileCoordX = Math.ceil(tileCoordX) - 1;
-      tileCoordY = Math.ceil(tileCoordY) - 1;
-    } else {
-      tileCoordX = Math.floor(tileCoordX);
-      tileCoordY = Math.floor(tileCoordY);
-    }
-
-    return createOrUpdateTileCoord(z, tileCoordX, tileCoordY, opt_tileCoord);
+    return this.getTileCoordForXYAndResolution_(x, y, resolution, reverseIntersectionPolicy, opt_tileCoord);
   }
 
   /**
