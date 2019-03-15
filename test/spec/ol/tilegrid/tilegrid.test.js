@@ -6,6 +6,8 @@ import {HALF_SIZE} from '../../../../src/ol/proj/epsg3857.js';
 import Projection from '../../../../src/ol/proj/Projection.js';
 import {createForExtent, createForProjection, createXYZ, getForProjection as getTileGridForProjection} from '../../../../src/ol/tilegrid.js';
 import TileGrid from '../../../../src/ol/tilegrid/TileGrid.js';
+import {wrapX} from '../../../../src/ol/tilegrid';
+import {getTopLeft} from '../../../../src/ol/extent';
 
 
 describe('ol.tilegrid.TileGrid', function() {
@@ -1054,6 +1056,32 @@ describe('ol.tilegrid.TileGrid', function() {
       expect(tileGrid.getZForResolution(125, -1)).to.eql(3);
       expect(tileGrid.getZForResolution(100, -1)).to.eql(3);
       expect(tileGrid.getZForResolution(50, -1)).to.eql(3);
+    });
+  });
+
+  describe('wrapX', function() {
+    it('returns the coordinates correctly wrapped (even with irregular grids)', function() {
+      const projection = getProjection('EPSG:3857');
+      const tileGrid = new TileGrid({
+        resolutions: [
+          78271.51696402048,    // regular grid, 2 tiles per width
+          45000,                // irregular grid, 3.48 tiles per width
+          39135.758482010235,       // regular grid, 4 tiles per width
+          21000,                // irregular grid, 7.45 tiles per width
+          19567.87924100512       // regular grid, 8 tiles per width
+        ],
+        origin: getTopLeft(projection.getExtent()),
+      });
+
+      expect(wrapX(tileGrid, [0, 4, 0], projection)).to.eql([0, 0, 0]);
+      expect(wrapX(tileGrid, [1, 9, 0], projection)).to.eql([1, 1, 0]);
+      expect(wrapX(tileGrid, [1, -8, 0], projection)).to.eql([1, 0, 0]);
+      expect(wrapX(tileGrid, [2, 9, 0], projection)).to.eql([2, 1, 0]);
+      expect(wrapX(tileGrid, [2, -8, 0], projection)).to.eql([2, 0, 0]);
+      expect(wrapX(tileGrid, [3, 13, 0], projection)).to.eql([3, 5, 0]);
+      expect(wrapX(tileGrid, [3, -12, 0], projection)).to.eql([3, 4, 0]);
+      expect(wrapX(tileGrid, [4, 13, 0], projection)).to.eql([4, 5, 0]);
+      expect(wrapX(tileGrid, [4, -12, 0], projection)).to.eql([4, 4, 0]);
     });
   });
 });

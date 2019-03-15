@@ -3,12 +3,18 @@
  */
 import {DEFAULT_MAX_ZOOM, DEFAULT_TILE_SIZE} from './tilegrid/common.js';
 import {toSize} from './size.js';
-import {containsCoordinate, createOrUpdate, getCorner, getHeight, getWidth} from './extent.js';
+import {createOrUpdate, getCorner, getHeight, getWidth} from './extent.js';
 import Corner from './extent/Corner.js';
 import {get as getProjection, METERS_PER_UNIT} from './proj.js';
 import Units from './proj/Units.js';
 import TileGrid from './tilegrid/TileGrid.js';
+import TileRange from './TileRange';
 
+
+/**
+ * @type {import("../TileRange.js").default}
+ */
+const tmpTileRange_ = new TileRange(0, 0, 0, 0);
 
 /**
  * @param {import("./proj/Projection.js").default} projection Projection.
@@ -33,16 +39,13 @@ export function getForProjection(projection) {
  */
 export function wrapX(tileGrid, tileCoord, projection) {
   const z = tileCoord[0];
-  const center = tileGrid.getTileCoordCenter(tileCoord);
-  const projectionExtent = extentFromProjection(projection);
-  if (!containsCoordinate(projectionExtent, center)) {
-    const worldWidth = getWidth(projectionExtent);
-    const worldsAway = Math.ceil((projectionExtent[0] - center[0]) / worldWidth);
-    center[0] += worldWidth * worldsAway;
-    return tileGrid.getTileCoordForCoordAndZ(center, z);
-  } else {
-    return tileCoord;
-  }
+  const projExtent = projection.getExtent();
+  const diffX = tileCoord[1] - tileGrid.getTileCoordForCoordAndZ(tileGrid.getOrigin(z), z)[1];
+
+  const tileCountX = tileGrid.getTileRangeForExtentAndZ(projExtent, z, tmpTileRange_).getWidth();
+  const extentShiftAmount = Math.floor(diffX / tileCountX);
+
+  return [tileCoord[0], tileCoord[1] - extentShiftAmount * tileCountX, tileCoord[2]]
 }
 
 
