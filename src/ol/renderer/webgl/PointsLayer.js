@@ -272,6 +272,9 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
      * @private
      */
     this.invertRenderTransform_ = createTransform();
+
+    // TEMP
+    this.worker_ = new Worker('./worker.js');
   }
 
   /**
@@ -353,6 +356,11 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
    * @private
    */
   rebuildBuffers_(frameState) {
+    this.worker_.postMessage({
+      type: 'test message',
+      transferrable: 1234
+    });
+
     const vectorLayer = /** @type {import("../../layer/Vector.js").default} */ (this.getLayer());
     const vectorSource = vectorLayer.getSource();
 
