@@ -16,6 +16,7 @@ import {
   multiply as multiplyTransform,
   apply as applyTransform
 } from '../../transform';
+import Worker from '../../worker/worker';
 
 const VERTEX_SHADER = `
   precision mediump float;
@@ -274,7 +275,8 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     this.invertRenderTransform_ = createTransform();
 
     // TEMP
-    this.worker_ = new Worker('./worker.js');
+    console.log(Worker);
+    this.worker_ = new Worker();
   }
 
   /**
@@ -357,8 +359,7 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
    */
   rebuildBuffers_(frameState) {
     this.worker_.postMessage({
-      type: 'test message',
-      transferrable: 1234
+      type: 'start rebuild buffers'
     });
 
     const vectorLayer = /** @type {import("../../layer/Vector.js").default} */ (this.getLayer());

@@ -1,5 +1,5 @@
-onmessage = function(event) {
-  console.log('received transfer object: ', event)
+export function onmessage(event) {
+  console.log('webgl worker received message: ', event.data);
 };
 
 

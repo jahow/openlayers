@@ -29,6 +29,17 @@ module.exports = {
         path.join(__dirname, '..', '..', 'src'),
         path.join(__dirname, '..')
       ]
+    }, {
+      test: /\.js$/,
+      use: {
+        loader: 'worker-loader',
+        options: {
+          inline: true
+        }
+      },
+      include: [
+        path.join(__dirname, '..', '..', 'src', 'ol', 'worker'),
+      ],
     }]
   },
   optimization: {
