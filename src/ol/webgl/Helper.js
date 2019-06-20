@@ -15,7 +15,14 @@ import {
 } from '../transform.js';
 import {create, fromTransform} from '../vec/mat4.js';
 import WebGLPostProcessingPass from './PostProcessingPass.js';
-import {getContext, getSupportedExtensions} from '../webgl.js';
+import {
+  getContext,
+  getSupportedExtensions,
+  UNSIGNED_BYTE,
+  UNSIGNED_INT,
+  UNSIGNED_SHORT,
+  FLOAT
+} from '../webgl.js';
 import {includes} from '../array.js';
 import {assert} from '../asserts.js';
 
@@ -59,6 +66,28 @@ export const DefaultAttrib = {
   OFFSETS: 'a_offsets',
   COLOR: 'a_color'
 };
+
+/**
+ * Attribute types, either `UNSIGNED_BYTE`, `UNSIGNED_SHORT`, `UNSIGNED_INT` or `FLOAT`
+ * Note: an attribute stored in a `Float32Array` should be of type `FLOAT`.
+ * @enum {number}
+ */
+export const AttributeType = {
+  UNSIGNED_BYTE: UNSIGNED_BYTE,
+  UNSIGNED_SHORT: UNSIGNED_SHORT,
+  UNSIGNED_INT: UNSIGNED_INT,
+  FLOAT: FLOAT
+};
+
+/**
+ * Description of an attribute in a buffer
+ * @typedef {Object} AttributeDescription
+ * @property {string} name Attribute name to use in shaders
+ * @property {number} size Number of components per attributes
+ * @property {AttributeType} [type] Attribute type, i.e. number of bytes used to store the value. This is
+ * determined by the class of typed array which the buffer uses (eg. `Float32Array` for a `FLOAT` attribute).
+ * Default is `FLOAT`.
+ */
 
 /**
  * @typedef {number|Array<number>|HTMLCanvasElement|HTMLImageElement|ImageData|import("../transform").Transform} UniformLiteralValue
@@ -178,7 +207,7 @@ export const DefaultAttrib = {
  * ### Specifying attributes
  *
  *   The GPU only receives the data as arrays of numbers. These numbers must be handled differently depending on what it describes (position, texture coordinate...).
- *   Attributes are used to specify these uses. Use {@link enableAttributeArray} and either
+ *   Attributes are used to specify these uses. Use {@link enableAttributeArray_} and either
  *   the default attribute names in {@link module:ol/webgl/Helper.DefaultAttrib} or custom ones.
  *
  *   Please note that you will have to specify the type and offset of the attributes in the data array. You can refer to the documentation of [WebGLRenderingContext.vertexAttribPointer](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer) for more explanation.
@@ -186,9 +215,9 @@ export const DefaultAttrib = {
  *   // here we indicate that the data array has the following structure:
  *   // [posX, posY, offsetX, offsetY, texCoordU, texCoordV, posX, posY, ...]
  *   let bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
- *   this.context.enableAttributeArray(DefaultAttrib.POSITION, 2, FLOAT, bytesPerFloat * 6, 0);
- *   this.context.enableAttributeArray(DefaultAttrib.OFFSETS, 2, FLOAT, bytesPerFloat * 6, bytesPerFloat * 2);
- *   this.context.enableAttributeArray(DefaultAttrib.TEX_COORD, 2, FLOAT, bytesPerFloat * 6, bytesPerFloat * 4);
+ *   this.context.enableAttributeArray_(DefaultAttrib.POSITION, 2, FLOAT, bytesPerFloat * 6, 0);
+ *   this.context.enableAttributeArray_(DefaultAttrib.OFFSETS, 2, FLOAT, bytesPerFloat * 6, bytesPerFloat * 2);
+ *   this.context.enableAttributeArray_(DefaultAttrib.TEX_COORD, 2, FLOAT, bytesPerFloat * 6, bytesPerFloat * 4);
  *   ```
  *
  * ### Rendering primitives
@@ -726,15 +755,16 @@ class WebGLHelper extends Disposable {
   }
 
   /**
-   * Will set the currently bound buffer to an attribute of the shader program
+   * Will set the currently bound buffer to an attribute of the shader program. Used by `#enableAttributes`
+   * internally.
    * @param {string} attribName Attribute name
    * @param {number} size Number of components per attributes
    * @param {number} type UNSIGNED_INT, UNSIGNED_BYTE, UNSIGNED_SHORT or FLOAT
    * @param {number} stride Stride in bytes (0 means attribs are packed)
    * @param {number} offset Offset in bytes
-   * @api
+   * @private
    */
-  enableAttributeArray(attribName, size, type, stride, offset) {
+  enableAttributeArray_(attribName, size, type, stride, offset) {
     const location = this.getAttributeLocation(attribName);
     // the attribute has not been found in the shaders; do not enable it
     if (location < 0) {
@@ -743,6 +773,36 @@ class WebGLHelper extends Disposable {
     this.getGL().enableVertexAttribArray(location);
     this.getGL().vertexAttribPointer(location, size, type,
       false, stride, offset);
+  }
+
+  /**
+   * Will enable the following attributes to be read from the currently bound buffer,
+   * i.e. tell the GPU where to read the different attributes in the buffer. An error in the
+   * size/type/order of attributes will most likely break the rendering and throw a WebGL exception.
+   * @param {Array<AttributeDescription>} attributes Ordered list of attributes to read from the buffer
+   * @param {AttributeType} type Type
+   * @api
+   */
+  enableAttributes(attributes, type) {
+    function getSizeFromType(type) {
+      switch (type) {
+        case AttributeType.UNSIGNED_BYTE: return Uint8Array.BYTES_PER_ELEMENT;
+        case AttributeType.UNSIGNED_SHORT: return Uint16Array.BYTES_PER_ELEMENT;
+        case AttributeType.UNSIGNED_INT: return Uint32Array.BYTES_PER_ELEMENT;
+        case AttributeType.FLOAT:
+        default: return 0;
+      }
+    }
+
+    const stride = computeAttributesStride(attributes);
+
+    // enable attributes
+    let offset = 0;
+    for (let i = 0; i < attributes.length; i++) {
+      const attr = attributes[i];
+      this.enableAttributeArray_(attr.name, attr.size, attr.type || FLOAT, stride, offset);
+      offset += getSizeFromType(attr.type) * attr.size;
+    }
   }
 
   /**
@@ -798,6 +858,21 @@ class WebGLHelper extends Disposable {
 
     return texture;
   }
+}
+
+/**
+ * Compute a stride based on a list of attributes
+ * @param {Array<AttributeDescription>} attributes Ordered list of attributes
+ * @returns {number} Stride, ie amount of values for each vertex in the vertex buffer
+ * @api
+ */
+export function computeAttributesStride(attributes) {
+  let stride = 0;
+  for (let i = 0; i < attributes.length; i++) {
+    const attr = attributes[i];
+    stride += attr.size;
+  }
+  return stride;
 }
 
 export default WebGLHelper;

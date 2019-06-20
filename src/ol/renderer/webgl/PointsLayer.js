@@ -3,13 +3,13 @@
  */
 import WebGLArrayBuffer from '../../webgl/Buffer.js';
 import {DYNAMIC_DRAW, ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, FLOAT} from '../../webgl.js';
-import {DefaultAttrib, DefaultUniform} from '../../webgl/Helper.js';
+import {DefaultUniform} from '../../webgl/Helper.js';
 import GeometryType from '../../geom/GeometryType.js';
 import WebGLLayerRenderer, {
   colorDecodeId,
   colorEncodeId,
-  getBlankImageData,
-  POINT_INSTRUCTIONS_COUNT, POINT_VERTEX_STRIDE, WebGLWorkerMessageType,
+  getBlankImageData, POINT_ATTRIBUTES,
+  POINT_INSTRUCTIONS_COUNT, WebGLWorkerMessageType,
   writePointFeatureInstructions
 } from './Layer.js';
 import ViewHint from '../../ViewHint.js';
@@ -390,8 +390,6 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     const vectorSource = vectorLayer.getSource();
     const viewState = frameState.viewState;
 
-    const stride = POINT_VERTEX_STRIDE;
-
     // the source has changed: clear the feature cache & reload features
     const sourceChanged = this.sourceRevision_ < vectorSource.getRevision();
     if (sourceChanged) {
@@ -416,17 +414,10 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     this.helper.useProgram(this.program_);
     this.helper.prepareDraw(frameState);
 
-    // write new data
+    // this binds the buffers & inform the GPU of the structure of the vertex buffer
     this.helper.bindBuffer(this.verticesBuffer_);
     this.helper.bindBuffer(this.indicesBuffer_);
-
-    const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-    this.helper.enableAttributeArray(DefaultAttrib.POSITION, 2, FLOAT, bytesPerFloat * stride, 0);
-    this.helper.enableAttributeArray(DefaultAttrib.OFFSETS, 2, FLOAT, bytesPerFloat * stride, bytesPerFloat * 2);
-    this.helper.enableAttributeArray(DefaultAttrib.TEX_COORD, 2, FLOAT, bytesPerFloat * stride, bytesPerFloat * 4);
-    this.helper.enableAttributeArray(DefaultAttrib.OPACITY, 1, FLOAT, bytesPerFloat * stride, bytesPerFloat * 6);
-    this.helper.enableAttributeArray(DefaultAttrib.ROTATE_WITH_VIEW, 1, FLOAT, bytesPerFloat * stride, bytesPerFloat * 7);
-    this.helper.enableAttributeArray(DefaultAttrib.COLOR, 4, FLOAT, bytesPerFloat * stride, bytesPerFloat * 8);
+    this.helper.enableAttributes(POINT_ATTRIBUTES);
 
     return true;
   }
@@ -580,14 +571,7 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     this.helper.bindBuffer(this.hitVerticesBuffer_);
     this.helper.bindBuffer(this.indicesBuffer_);
 
-    const stride = POINT_VERTEX_STRIDE;
-    const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-    this.helper.enableAttributeArray(DefaultAttrib.POSITION, 2, FLOAT, bytesPerFloat * stride, 0);
-    this.helper.enableAttributeArray(DefaultAttrib.OFFSETS, 2, FLOAT, bytesPerFloat * stride, bytesPerFloat * 2);
-    this.helper.enableAttributeArray(DefaultAttrib.TEX_COORD, 2, FLOAT, bytesPerFloat * stride, bytesPerFloat * 4);
-    this.helper.enableAttributeArray(DefaultAttrib.OPACITY, 1, FLOAT, bytesPerFloat * stride, bytesPerFloat * 6);
-    this.helper.enableAttributeArray(DefaultAttrib.ROTATE_WITH_VIEW, 1, FLOAT, bytesPerFloat * stride, bytesPerFloat * 7);
-    this.helper.enableAttributeArray(DefaultAttrib.COLOR, 4, FLOAT, bytesPerFloat * stride, bytesPerFloat * 8);
+    this.helper.enableAttributes(POINT_ATTRIBUTES);
 
     const renderCount = this.indicesBuffer_.getArray() ? this.indicesBuffer_.getArray().length : 0;
     this.helper.drawElements(0, renderCount);

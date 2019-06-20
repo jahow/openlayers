@@ -3,12 +3,13 @@
  * @module ol/worker/webgl
  */
 import {
+  POINT_ATTRIBUTES,
   POINT_INSTRUCTIONS_COUNT,
-  POINT_VERTEX_STRIDE,
   WebGLWorkerMessageType,
   writePointFeatureToBuffers
 } from '../renderer/webgl/Layer.js';
 import {assign} from '../obj.js';
+import {computeAttributesStride} from '../webgl/Helper.js';
 
 onmessage = event => {
   const received = event.data;
@@ -17,9 +18,10 @@ onmessage = event => {
     const customAttributesCount = received.customAttributesCount || 0;
     const instructionsCount = POINT_INSTRUCTIONS_COUNT + customAttributesCount;
 
+    const stride = computeAttributesStride(POINT_ATTRIBUTES);
     const elementsCount = renderInstructions.length / instructionsCount;
     const indicesCount = elementsCount * 6;
-    const verticesCount = elementsCount * 4 * (POINT_VERTEX_STRIDE + customAttributesCount);
+    const verticesCount = elementsCount * 4 * (stride + customAttributesCount);
     const indexBuffer = new Uint32Array(indicesCount);
     const vertexBuffer = new Float32Array(verticesCount);
 

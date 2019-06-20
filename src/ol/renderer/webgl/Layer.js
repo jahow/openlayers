@@ -2,7 +2,7 @@
  * @module ol/renderer/webgl/Layer
  */
 import LayerRenderer from '../Layer.js';
-import WebGLHelper from '../../webgl/Helper.js';
+import WebGLHelper, {AttributeType, computeAttributesStride, DefaultAttrib} from '../../webgl/Helper.js';
 
 
 /**
@@ -84,9 +84,48 @@ class WebGLLayerRenderer extends LayerRenderer {
 
 }
 
+/**
+ * Amount of values for each point in a rendering instructions array,
+ * as written by `writePointFeatureInstructions`
+ * @type {number}
+ */
+export const POINT_INSTRUCTIONS_COUNT = 13;
 
 /**
- * @param {Float32Array} instructions Instructons array in which to write.
+ * List of default attributes for points as written by `writePointFeatureToBuffers`.
+ * This array can be extended with custom attributes if needed.
+ * @type {Array<import("../../webgl/Helper.js").AttributeDescription>}
+ */
+export const POINT_ATTRIBUTES = [
+  {
+    name: DefaultAttrib.POSITION,
+    size: 2,
+    type: AttributeType.FLOAT
+  }, {
+    name: DefaultAttrib.OFFSETS,
+    size: 2,
+    type: AttributeType.FLOAT
+  }, {
+    name: DefaultAttrib.TEX_COORD,
+    size: 2,
+    type: AttributeType.FLOAT
+  }, {
+    name: DefaultAttrib.OPACITY,
+    size: 1,
+    type: AttributeType.FLOAT
+  }, {
+    name: DefaultAttrib.ROTATE_WITH_VIEW,
+    size: 1,
+    type: AttributeType.FLOAT
+  }, {
+    name: DefaultAttrib.COLOR,
+    size: 4,
+    type: AttributeType.FLOAT
+  }
+];
+
+/**
+ * @param {Float32Array} instructions Instructions array in which to write.
  * @param {number} elementIndex Index from which render instructions will be written.
  * @param {number} x Point center X coordinate
  * @param {number} y Point center Y coordinate
@@ -121,9 +160,6 @@ export function writePointFeatureInstructions(instructions, elementIndex, x, y, 
 
 const tmpArray_ = [];
 const bufferPositions_ = {vertexPosition: 0, indexPosition: 0};
-
-export const POINT_INSTRUCTIONS_COUNT = 13;
-export const POINT_VERTEX_STRIDE = 12;
 
 function writePointVertex(buffer, pos, x, y, offsetX, offsetY, u, v, opacity, rotateWithView, red, green, blue, alpha) {
   buffer[pos + 0] = x;
@@ -187,7 +223,7 @@ export function writePointFeatureToBuffers(instructions, elementIndex, vertexBuf
   const alpha = instructions[elementIndex + 12];
 
   // the default vertex buffer stride is 12, plus additional custom values if any
-  const baseStride = POINT_VERTEX_STRIDE;
+  const baseStride = computeAttributesStride(POINT_ATTRIBUTES);
   const stride = baseStride + count_ - POINT_INSTRUCTIONS_COUNT;
 
   // read custom numerical attributes on the feature

@@ -1,4 +1,4 @@
-import WebGLHelper from '../../../../src/ol/webgl/Helper.js';
+import WebGLHelper, {AttributeType} from '../../../../src/ol/webgl/Helper.js';
 import {
   create as createTransform,
   rotate as rotateTransform,
@@ -287,6 +287,34 @@ describe('ol.webgl.WebGLHelper', function() {
         const t1 = gl.createTexture();
         const t2 = h.createTexture([width, height], undefined, t1);
         expect(t1).to.be(t2);
+      });
+    });
+
+    describe('#enableAttributes and #computeAttributesStride', function() {
+      let baseAttrs, h;
+
+      beforeEach(function() {
+        h = new WebGLHelper();
+        baseAttrs = [
+          {
+            name: 'attr1',
+            size: 3
+          },
+          {
+            name: 'attr2',
+            size: 2
+          },
+          {
+            name: 'attr3',
+            size: 1
+          }
+        ];
+      });
+
+      it('enables attributes based on the given array (FLOAT)', function() {
+        const spy = sinon.spy(h, 'enableAttributeArray_');
+        h.enableAttributes(baseAttrs, AttributeType.FLOAT);
+        expect(spy.callCount).to.eql(3);
       });
     });
   });
