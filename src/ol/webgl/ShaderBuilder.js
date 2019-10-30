@@ -484,8 +484,8 @@ export function parseLiteralStyle(style) {
     attributes: vertContext.attributes.map(function(attributeName) {
       return {
         name: attributeName,
-        callback: function(feature) {
-          let value = feature.get(attributeName);
+        callback: function(featureProps) {
+          let value = featureProps[attributeName];
           if (typeof value === 'string') {
             value = parseFloat(stringToGlsl(vertContext, value));
           }

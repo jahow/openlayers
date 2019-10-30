@@ -138,7 +138,8 @@ client.send();
 map.addLayer(
   new WebGLPointsLayer({
     source: vectorSource,
-    style: style
+    style: style,
+    // disableHitDetection: true
   })
 );
 
