@@ -2,6 +2,9 @@
  * @module ol/webgl/PostProcessingPass
  */
 
+import Buffer from './Buffer.js';
+import {ARRAY_BUFFER, STATIC_DRAW} from '../webgl';
+
 const DEFAULT_VERTEX_SHADER = `
   precision mediump float;
   
@@ -33,7 +36,7 @@ const DEFAULT_FRAGMENT_SHADER = `
 
 /**
  * @typedef {Object} Options
- * @property {WebGLRenderingContext} webGlContext WebGL context; mandatory.
+ * @property {import("./Helper.js").default} helper WebGL helper; mandatory.
  * @property {number} [scaleRatio] Scale ratio; if < 1, the post process will render to a texture smaller than
  * the main canvas that will then be sampled up (useful for saving resource on blur steps).
  * @property {string} [vertexShader] Vertex shader source
@@ -104,8 +107,8 @@ class WebGLPostProcessingPass {
    * @param {Options} options Options.
    */
   constructor(options) {
-    this.gl_ = options.webGlContext;
-    const gl = this.gl_;
+    this.helper_ = options.helper;
+    const gl = this.helper_.getGL();
 
     this.scaleRatio_ = options.scaleRatio || 1;
 
@@ -115,34 +118,30 @@ class WebGLPostProcessingPass {
     this.frameBuffer_ = gl.createFramebuffer();
 
     // compile the program for the frame buffer
-    // TODO: make compilation errors show up
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShader, options.vertexShader || DEFAULT_VERTEX_SHADER);
-    gl.compileShader(vertexShader);
-    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, options.fragmentShader || DEFAULT_FRAGMENT_SHADER);
-    gl.compileShader(fragmentShader);
-    this.renderTargetProgram_ = gl.createProgram();
-    gl.attachShader(this.renderTargetProgram_, vertexShader);
-    gl.attachShader(this.renderTargetProgram_, fragmentShader);
-    gl.linkProgram(this.renderTargetProgram_);
+    this.program_ = this.helper_.getProgram(
+      options.fragmentShader || DEFAULT_FRAGMENT_SHADER,
+      options.vertexShader || DEFAULT_VERTEX_SHADER
+    );
+
+    if (this.getShaderCompileErrors()) {
+      throw new Error(this.getShaderCompileErrors());
+    }
 
     // bind the vertices buffer for the frame buffer
-    this.renderTargetVerticesBuffer_ = gl.createBuffer();
-    const verticesArray = [
+    this.renderTargetVerticesBuffer_ = new Buffer(ARRAY_BUFFER, STATIC_DRAW);
+    this.renderTargetVerticesBuffer_.fromArray([
       -1, -1,
       1, -1,
       -1, 1,
       1, -1,
       1, 1,
       -1, 1
-    ];
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderTargetVerticesBuffer_);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticesArray), gl.STATIC_DRAW);
+    ]);
+    this.helper_.flushBufferData(this.renderTargetVerticesBuffer_);
 
-    this.renderTargetAttribLocation_ = gl.getAttribLocation(this.renderTargetProgram_, 'a_position');
-    this.renderTargetUniformLocation_ = gl.getUniformLocation(this.renderTargetProgram_, 'u_screenSize');
-    this.renderTargetTextureLocation_ = gl.getUniformLocation(this.renderTargetProgram_, 'u_image');
+    this.renderTargetAttribLocation_ = gl.getAttribLocation(this.program_, 'a_position');
+    this.renderTargetUniformLocation_ = gl.getUniformLocation(this.program_, 'u_screenSize');
+    this.renderTargetTextureLocation_ = gl.getUniformLocation(this.program_, 'u_image');
 
     /**
      * Holds info about custom uniforms used in the post processing pass
@@ -153,18 +152,9 @@ class WebGLPostProcessingPass {
     options.uniforms && Object.keys(options.uniforms).forEach(function(name) {
       this.uniforms_.push({
         value: options.uniforms[name],
-        location: gl.getUniformLocation(this.renderTargetProgram_, name)
+        location: gl.getUniformLocation(this.program_, name)
       });
     }.bind(this));
-  }
-
-  /**
-   * Get the WebGL rendering context
-   * @return {WebGLRenderingContext} The rendering context.
-   * @api
-   */
-  getGL() {
-    return this.gl_;
   }
 
   /**
@@ -175,7 +165,7 @@ class WebGLPostProcessingPass {
    * @api
    */
   init(frameState) {
-    const gl = this.getGL();
+    const gl = this.helper_.getGL();
     const canvas = gl.canvas;
     const size = frameState.size;
 
@@ -216,7 +206,7 @@ class WebGLPostProcessingPass {
    * @api
    */
   apply(frameState, nextPass) {
-    const gl = this.getGL();
+    const gl = this.helper_.getGL();
     const canvas = gl.canvas;
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, nextPass ? nextPass.getFrameBuffer() : null);
@@ -230,9 +220,9 @@ class WebGLPostProcessingPass {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderTargetVerticesBuffer_);
+    this.helper_.bindBuffer(this.renderTargetVerticesBuffer_);
 
-    gl.useProgram(this.renderTargetProgram_);
+    gl.useProgram(this.program_);
     gl.enableVertexAttribArray(this.renderTargetAttribLocation_);
     gl.vertexAttribPointer(this.renderTargetAttribLocation_, 2, gl.FLOAT, false, 0, 0);
     gl.uniform2f(this.renderTargetUniformLocation_, canvas.width, canvas.height);
@@ -257,7 +247,7 @@ class WebGLPostProcessingPass {
    * @private
    */
   applyUniforms(frameState) {
-    const gl = this.getGL();
+    const gl = this.helper_.getGL();
 
     let value;
     let textureSlot = 1;
@@ -303,6 +293,15 @@ class WebGLPostProcessingPass {
         gl.uniform1f(uniform.location, value);
       }
     });
+  }
+
+  /**
+   * Will return the last shader compilation errors. If no error happened, will return null;
+   * @return {string|null} Errors, or null if last compilation was successful
+   * @api
+   */
+  getShaderCompileErrors() {
+    return this.helper_.getShaderCompileErrors();
   }
 }
 

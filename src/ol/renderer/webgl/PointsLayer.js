@@ -20,7 +20,7 @@ import WebGLRenderTarget from '../../webgl/RenderTarget.js';
 import {assert} from '../../asserts.js';
 import BaseVector from '../../layer/BaseVector.js';
 import {Geometry} from '../../geom.js';
-import {listen} from '../../events';
+import {listen, unlistenByKey} from '../../events';
 import VectorEventType from '../../source/VectorEventType';
 import {Feature} from '../../index.js';
 
@@ -290,7 +290,7 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     this.featureMap = {};
 
     const source = this.getLayer().getSource();
-    listen(source, VectorEventType.ADDFEATURE, function(evt) {
+    this.listenKey_ = listen(source, VectorEventType.ADDFEATURE, function(evt) {
       const feature = evt.feature;
       const uid = getUid(feature);
       this.featureMap[uid] = feature;
@@ -531,6 +531,8 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
    */
   disposeInternal() {
     this.worker_.terminate();
+    this.layer_ = null;
+    unlistenByKey(this.listenKey_);
     super.disposeInternal();
   }
 }

@@ -5,6 +5,7 @@ import {assign} from '../obj.js';
 import WebGLPointsLayerRenderer from '../renderer/webgl/PointsLayer.js';
 import {parseLiteralStyle} from '../webgl/ShaderBuilder.js';
 import Layer from './Layer.js';
+import EventType from '../events/EventType';
 
 
 /**
@@ -99,6 +100,16 @@ class WebGLPointsLayer extends Layer {
       uniforms: this.parseResult_.uniforms,
       attributes: this.parseResult_.attributes
     });
+  }
+
+  /**
+   *
+   * @inheritDoc
+   */
+  disposeInternal() {
+    this.renderer_.dispose();
+    this.state_ = null;
+    super.disposeInternal();
   }
 }
 
