@@ -436,9 +436,8 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
       }
 
       // pushing custom attributes
-      let value;
       for (let j = 0; j < this.customAttributes.length; j++) {
-        value = this.customAttributes[j].callback(properties);
+        let value = this.customAttributes[j].callback(properties);
         this.renderInstructions_[renderIndex++] = value;
         if (this.hitDetectionEnabled_) {
           this.hitRenderInstructions_[hitIndex++] = value;

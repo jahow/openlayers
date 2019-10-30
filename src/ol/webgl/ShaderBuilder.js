@@ -487,7 +487,10 @@ export function parseLiteralStyle(style) {
         callback: function(featureProps) {
           let value = featureProps[attributeName];
           if (typeof value === 'string') {
-            value = parseFloat(stringToGlsl(vertContext, value));
+            if (vertContext.stringLiteralsMap[value] === undefined) {
+              vertContext.stringLiteralsMap[value] = Object.keys(vertContext.stringLiteralsMap).length;
+            }
+            value = vertContext.stringLiteralsMap[value];
           }
           return value !== undefined ? value : -9999999; // to avoid matching with the first string literal
         }
