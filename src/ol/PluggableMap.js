@@ -1022,9 +1022,9 @@ class PluggableMap extends BaseObject {
    * @private
    */
   handleSizeChanged_() {
-    if (this.getView()) {
-      this.getView().resolveConstraints(0);
-    }
+    // if (this.getView()) {
+    //   this.getView().resolveConstraints(0);
+    // }
 
     this.render();
   }
@@ -1141,7 +1141,7 @@ class PluggableMap extends BaseObject {
         view, EventType.CHANGE,
         this.handleViewPropertyChanged_, this);
 
-      view.resolveConstraints(0);
+      //view.resolveConstraints(0);
     }
     this.render();
   }
@@ -1268,7 +1268,8 @@ class PluggableMap extends BaseObject {
       const viewHints = view.getHints(this.frameState_ ? this.frameState_.viewHints : undefined);
       const viewState = view.getState();
       frameState = {
-        animate: false,
+        // TODO: this should use a view.isStable() method or something
+        animate: view.getAnimating() || view.getInteracting(),
         coordinateToPixelTransform: this.coordinateToPixelTransform_,
         declutterItems: previousFrameState ? previousFrameState.declutterItems : [],
         extent: getForViewAndSize(viewState.center, viewState.resolution, viewState.rotation, size),
@@ -1290,6 +1291,8 @@ class PluggableMap extends BaseObject {
 
     this.frameState_ = frameState;
     this.renderer_.renderFrame(frameState);
+
+    view.update();
 
     if (frameState) {
       if (frameState.animate) {

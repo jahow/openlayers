@@ -386,7 +386,7 @@ class View extends BaseObject {
     } else if (options.zoom !== undefined) {
       this.setZoom(options.zoom);
     }
-    this.resolveConstraints(0);
+    // this.resolveConstraints(0);
 
     this.setProperties(properties);
 
@@ -460,9 +460,9 @@ class View extends BaseObject {
    * @api
    */
   animate(var_args) {
-    if (this.isDef() && !this.getAnimating()) {
-      this.resolveConstraints(0);
-    }
+    // if (this.isDef() && !this.getAnimating()) {
+    //   this.resolveConstraints(0);
+    // }
     const args = new Array(arguments.length);
     for (let i = 0; i < args.length; ++i) {
       let options = arguments[i];
@@ -557,7 +557,6 @@ class View extends BaseObject {
     }
     this.animations_.push(series);
     this.setHint(ViewHint.ANIMATING, 1);
-    this.updateAnimations_();
   }
 
   /**
@@ -593,19 +592,26 @@ class View extends BaseObject {
     this.animations_.length = 0;
   }
 
+
+  update() {
+    this.updateAnimations_();
+    this.updateTargetState_();
+    this.applyTargetState_();
+  }
+
   /**
    * Update all animations.
    */
   updateAnimations_() {
-    if (this.updateAnimationKey_ !== undefined) {
-      cancelAnimationFrame(this.updateAnimationKey_);
-      this.updateAnimationKey_ = undefined;
-    }
+    // if (this.updateAnimationKey_ !== undefined) {
+    //   cancelAnimationFrame(this.updateAnimationKey_);
+    //   this.updateAnimationKey_ = undefined;
+    // }
     if (!this.getAnimating()) {
       return;
     }
     const now = Date.now();
-    let more = false;
+    // let more = false;
     for (let i = this.animations_.length - 1; i >= 0; --i) {
       const series = this.animations_[i];
       let seriesComplete = true;
@@ -642,7 +648,7 @@ class View extends BaseObject {
             this.targetCenter_ = this.calculateCenterZoom(constrainedResolution, animation.anchor);
           }
           this.targetResolution_ = resolution;
-          this.applyTargetState_(true);
+          // this.applyTargetState_(true);
         }
         if (animation.sourceRotation !== undefined && animation.targetRotation !== undefined) {
           const rotation = progress === 1 ?
@@ -654,8 +660,8 @@ class View extends BaseObject {
           }
           this.targetRotation_ = rotation;
         }
-        this.applyTargetState_(true);
-        more = true;
+        // this.applyTargetState_(true);
+        // more = true;
         if (!animation.complete) {
           break;
         }
@@ -671,9 +677,9 @@ class View extends BaseObject {
     }
     // prune completed series
     this.animations_ = this.animations_.filter(Boolean);
-    if (more && this.updateAnimationKey_ === undefined) {
-      this.updateAnimationKey_ = requestAnimationFrame(this.updateAnimations_.bind(this));
-    }
+    // if (more && this.updateAnimationKey_ === undefined) {
+    //   this.updateAnimationKey_ = requestAnimationFrame(this.updateAnimations_.bind(this));
+    // }
   }
 
   /**
@@ -1163,7 +1169,7 @@ class View extends BaseObject {
     } else {
       this.targetResolution_ = resolution;
       this.targetCenter_ = center;
-      this.applyTargetState_(false, true);
+      // this.applyTargetState_(false, true);
       animationCallback(callback, true);
     }
   }
@@ -1257,7 +1263,7 @@ class View extends BaseObject {
     }
 
     this.targetResolution_ *= ratio;
-    this.applyTargetState_();
+    // this.applyTargetState_();
   }
 
   /**
@@ -1296,7 +1302,7 @@ class View extends BaseObject {
       this.targetCenter_ = this.calculateCenterRotate(newRotation, opt_anchor);
     }
     this.targetRotation_ += delta;
-    this.applyTargetState_();
+    // this.applyTargetState_();
   }
 
   /**
@@ -1315,7 +1321,7 @@ class View extends BaseObject {
    */
   setCenterInternal(center) {
     this.targetCenter_ = center;
-    this.applyTargetState_();
+    // this.applyTargetState_();
   }
 
   /**
@@ -1337,7 +1343,7 @@ class View extends BaseObject {
    */
   setResolution(resolution) {
     this.targetResolution_ = resolution;
-    this.applyTargetState_();
+    // this.applyTargetState_();
   }
 
   /**
@@ -1348,7 +1354,7 @@ class View extends BaseObject {
    */
   setRotation(rotation) {
     this.targetRotation_ = rotation;
-    this.applyTargetState_();
+    // this.applyTargetState_();
   }
 
   /**
@@ -1358,6 +1364,27 @@ class View extends BaseObject {
    */
   setZoom(zoom) {
     this.setResolution(this.getResolutionForZoom(zoom));
+  }
+
+  updateTargetState_() {
+    if (!this.lastUpdate_) {
+      this.lastUpdate_ = Date.now();
+    }
+    const timeDelta = Date.now() - this.lastUpdate_;
+    this.lastUpdate_ = Date.now();
+
+    const isMoving = this.getAnimating() || this.getInteracting();
+
+    if (!isMoving) {
+      this.targetRotation_ = this.constraints_.rotation(this.targetRotation_, false);
+      const size = this.getSizeFromViewport_(this.targetRotation_);
+      this.targetResolution_ = this.constraints_.resolution(this.targetResolution_, 0, size, false);
+      this.targetCenter_ = this.constraints_.center(this.targetCenter_, this.targetResolution_, size, false);
+    }
+
+    // if (this.getAnimating() && !opt_doNotCancelAnims) {
+    //   this.cancelAnimations();
+    // }
   }
 
   /**
@@ -1377,19 +1404,54 @@ class View extends BaseObject {
     const newResolution = this.constraints_.resolution(this.targetResolution_, 0, size, isMoving);
     const newCenter = this.constraints_.center(this.targetCenter_, newResolution, size, isMoving);
 
-    if (this.get(ViewProperty.ROTATION) !== newRotation) {
-      this.set(ViewProperty.ROTATION, newRotation);
-    }
-    if (this.get(ViewProperty.RESOLUTION) !== newResolution) {
-      this.set(ViewProperty.RESOLUTION, newResolution);
-    }
-    if (!this.get(ViewProperty.CENTER) || !equals(this.get(ViewProperty.CENTER), newCenter)) {
-      this.set(ViewProperty.CENTER, newCenter);
+    function lerp(a, b, ratio) {
+      if (Math.abs(b - a) < 0.001) {
+        return b;
+      }
+      return (b - a) * ratio + a;
     }
 
-    if (this.getAnimating() && !opt_doNotCancelAnims) {
-      this.cancelAnimations();
+    const rotation = this.get(ViewProperty.ROTATION);
+    if (rotation === undefined) {
+      this.set(ViewProperty.ROTATION, newRotation);
+    } else {
+      const rotationDelta = newRotation - rotation;
+      if (Math.abs(rotationDelta) > 0) {
+        this.set(ViewProperty.ROTATION, lerp(rotation, newRotation, 0.8));
+      }
     }
+
+    const resolution = this.get(ViewProperty.RESOLUTION);
+    if (resolution === undefined) {
+      this.set(ViewProperty.RESOLUTION, newResolution);
+    } else {
+      const zoom = this.getZoomForResolution(resolution);
+      const newZoom = this.getZoomForResolution(newResolution);
+      const zoomDelta = newZoom - zoom;
+      if (Math.abs(zoomDelta) > 0) {
+        this.set(ViewProperty.RESOLUTION, this.getResolutionForZoom(
+          lerp(zoom, newZoom, 0.5)
+        ));
+      }
+    }
+
+    const center = this.get(ViewProperty.CENTER);
+    if (center === undefined) {
+      this.set(ViewProperty.CENTER, newCenter);
+    } else {
+      const centerDelta = [newCenter[0] - center[0], newCenter[1] - center[1]];
+      const centerDeltaLength = centerDelta[0] * centerDelta[0] + centerDelta[1] + centerDelta[1];
+      if (centerDeltaLength > 0) {
+        this.set(ViewProperty.CENTER, [
+          lerp(center[0], newCenter[0], 0.99),
+          lerp(center[1], newCenter[1], 0.99)
+        ]);
+      }
+    }
+
+    // if (this.getAnimating() && !opt_doNotCancelAnims) {
+    //   this.cancelAnimations();
+    // }
   }
 
   /**
@@ -1445,7 +1507,7 @@ class View extends BaseObject {
    * @api
    */
   beginInteraction() {
-    this.resolveConstraints(0);
+    // this.resolveConstraints(0);
 
     this.setHint(ViewHint.INTERACTING, 1);
   }
@@ -1473,7 +1535,7 @@ class View extends BaseObject {
   endInteractionInternal(opt_duration, opt_resolutionDirection, opt_anchor) {
     this.setHint(ViewHint.INTERACTING, -1);
 
-    this.resolveConstraints(opt_duration, opt_resolutionDirection, opt_anchor);
+    // this.resolveConstraints(opt_duration, opt_resolutionDirection, opt_anchor);
   }
 
   /**
