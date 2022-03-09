@@ -516,7 +516,7 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
     this.helper.makeProjectionTransform(frameState, this.currentTransform_);
     multiplyTransform(this.currentTransform_, this.invertRenderTransform_);
 
-    this.helper.useProgram(this.program_);
+    this.helper.useProgram(this.program_, frameState);
     this.helper.prepareDraw(frameState);
 
     // write new data
@@ -698,7 +698,7 @@ class WebGLPointsLayerRenderer extends WebGLLayerRenderer {
       Math.floor(frameState.size[1] / 2),
     ]);
 
-    this.helper.useProgram(this.hitProgram_);
+    this.helper.useProgram(this.hitProgram_, frameState);
     this.helper.prepareDrawToRenderTarget(
       frameState,
       this.hitRenderTarget_,
