@@ -221,19 +221,21 @@ describe('ol/webgl/WebGLHelper', function () {
     });
 
     describe('#makeProjectionTransform', function () {
+      let scaleX, scaleY;
+
       beforeEach(function () {
         h = new WebGLHelper();
-      });
-
-      it('gives out the correct transform', function () {
-        const scaleX =
+        scaleX =
           2 /
           SAMPLE_FRAMESTATE.size[0] /
           SAMPLE_FRAMESTATE.viewState.resolution;
-        const scaleY =
+        scaleY =
           2 /
           SAMPLE_FRAMESTATE.size[1] /
           SAMPLE_FRAMESTATE.viewState.resolution;
+      });
+
+      it('gives out the correct transform', function () {
         const given = createTransform();
         const expected = createTransform();
         scaleTransform(expected, scaleX, scaleY);
@@ -245,6 +247,25 @@ describe('ol/webgl/WebGLHelper', function () {
         );
 
         h.makeProjectionTransform(SAMPLE_FRAMESTATE, given);
+
+        expect(given.map((val) => val.toFixed(15))).to.eql(
+          expected.map((val) => val.toFixed(15))
+        );
+      });
+
+      it('includes an X offset if specified', function () {
+        const offsetX = 25;
+        const given = createTransform();
+        const expected = createTransform();
+        scaleTransform(expected, scaleX, scaleY);
+        rotateTransform(expected, -SAMPLE_FRAMESTATE.viewState.rotation);
+        translateTransform(
+          expected,
+          -SAMPLE_FRAMESTATE.viewState.center[0] + offsetX,
+          -SAMPLE_FRAMESTATE.viewState.center[1]
+        );
+
+        h.makeProjectionTransform(SAMPLE_FRAMESTATE, given, offsetX);
 
         expect(given.map((val) => val.toFixed(15))).to.eql(
           expected.map((val) => val.toFixed(15))
