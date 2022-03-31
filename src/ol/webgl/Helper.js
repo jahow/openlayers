@@ -304,8 +304,6 @@ function releaseCanvas(key) {
  *   ```
  *
  * For an example usage of this class, refer to {@link module:ol/renderer/webgl/PointsLayer~WebGLPointsLayerRenderer}.
- *
- * @api
  */
 class WebGLHelper extends Disposable {
   /**
@@ -486,7 +484,6 @@ class WebGLHelper extends Disposable {
    * the WebGL buffer, bind it, populate it, and add an entry to
    * the cache.
    * @param {import("./Buffer").default} buffer Buffer.
-   * @api
    */
   bindBuffer(buffer) {
     const gl = this.getGL();
@@ -507,7 +504,6 @@ class WebGLHelper extends Disposable {
    * Update the data contained in the buffer array; this is required for the
    * new data to be rendered
    * @param {import("./Buffer").default} buffer Buffer.
-   * @api
    */
   flushBufferData(buffer) {
     const gl = this.getGL();
@@ -553,7 +549,6 @@ class WebGLHelper extends Disposable {
    * subsequent draw calls.
    * @param {import("../PluggableMap.js").FrameState} frameState current frame state
    * @param {boolean} [opt_disableAlphaBlend] If true, no alpha blending will happen.
-   * @api
    */
   prepareDraw(frameState, opt_disableAlphaBlend) {
     const gl = this.getGL();
@@ -611,7 +606,6 @@ class WebGLHelper extends Disposable {
    * Execute a draw call based on the currently bound program, texture, buffers, attributes.
    * @param {number} start Start index.
    * @param {number} end End index.
-   * @api
    */
   drawElements(start, end) {
     const gl = this.getGL();
@@ -652,7 +646,6 @@ class WebGLHelper extends Disposable {
 
   /**
    * @return {HTMLCanvasElement} Canvas.
-   * @api
    */
   getCanvas() {
     return this.canvas_;
@@ -661,7 +654,6 @@ class WebGLHelper extends Disposable {
   /**
    * Get the WebGL rendering context
    * @return {WebGLRenderingContext} The rendering context.
-   * @api
    */
   getGL() {
     return this.gl_;
@@ -802,7 +794,6 @@ class WebGLHelper extends Disposable {
    * in the program will be set based on the current frame state and the helper configuration.
    * @param {WebGLProgram} program Program.
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @api
    */
   useProgram(program, frameState) {
     const gl = this.getGL();
@@ -836,7 +827,6 @@ class WebGLHelper extends Disposable {
    * @param {string} fragmentShaderSource Fragment shader source.
    * @param {string} vertexShaderSource Vertex shader source.
    * @return {WebGLProgram} Program
-   * @api
    */
   getProgram(fragmentShaderSource, vertexShaderSource) {
     const gl = this.getGL();
@@ -886,7 +876,6 @@ class WebGLHelper extends Disposable {
    * Will get the location from the shader or the cache
    * @param {string} name Uniform name
    * @return {WebGLUniformLocation} uniformLocation
-   * @api
    */
   getUniformLocation(name) {
     if (this.uniformLocations_[name] === undefined) {
@@ -902,7 +891,6 @@ class WebGLHelper extends Disposable {
    * Will get the location from the shader or the cache
    * @param {string} name Attribute name
    * @return {number} attribLocation
-   * @api
    */
   getAttributeLocation(name) {
     if (this.attribLocations_[name] === undefined) {
@@ -920,7 +908,6 @@ class WebGLHelper extends Disposable {
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
    * @param {import("../transform").Transform} transform Transform to update.
    * @return {import("../transform").Transform} The updated transform object.
-   * @api
    */
   makeProjectionTransform(frameState, transform) {
     const size = frameState.size;
@@ -946,7 +933,6 @@ class WebGLHelper extends Disposable {
    * Give a value for a standard float uniform
    * @param {string} uniform Uniform name
    * @param {number} value Value
-   * @api
    */
   setUniformFloatValue(uniform, value) {
     this.getGL().uniform1f(this.getUniformLocation(uniform), value);
@@ -974,7 +960,6 @@ class WebGLHelper extends Disposable {
    * Give a value for a standard matrix4 uniform
    * @param {string} uniform Uniform name
    * @param {Array<number>} value Matrix value
-   * @api
    */
   setUniformMatrixValue(uniform, value) {
     this.getGL().uniformMatrix4fv(
@@ -1016,7 +1001,6 @@ class WebGLHelper extends Disposable {
    * i.e. tell the GPU where to read the different attributes in the buffer. An error in the
    * size/type/order of attributes will most likely break the rendering and throw a WebGL exception.
    * @param {Array<AttributeDescription>} attributes Ordered list of attributes to read from the buffer
-   * @api
    */
   enableAttributes(attributes) {
     const stride = computeAttributesStride(attributes);
@@ -1058,7 +1042,6 @@ class WebGLHelper extends Disposable {
    * @param {ImageData|HTMLImageElement|HTMLCanvasElement} [opt_data] Image data/object to bind to the texture
    * @param {WebGLTexture} [opt_texture] Existing texture to reuse
    * @return {WebGLTexture} The generated texture
-   * @api
    */
   createTexture(size, opt_data, opt_texture) {
     const gl = this.getGL();
@@ -1105,7 +1088,6 @@ class WebGLHelper extends Disposable {
  * Compute a stride in bytes based on a list of attributes
  * @param {Array<AttributeDescription>} attributes Ordered list of attributes
  * @return {number} Stride, ie amount of values for each vertex in the vertex buffer
- * @api
  */
 export function computeAttributesStride(attributes) {
   let stride = 0;
