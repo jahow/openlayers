@@ -9,6 +9,7 @@ import {
   makeInverse as makeInverseTransform,
   multiply as multiplyTransform,
 } from '../../transform.js';
+import {getWidth} from "../../extent.js";
 
 /**
  * @typedef {Object} CustomAttribute A description of a custom attribute to be passed on to the GPU, with a value different
@@ -91,19 +92,33 @@ class AbstractBatchRenderer {
    * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
    */
   render(batch, currentTransform, frameState) {
-    // multiply the current projection transform with the invert of the one used to fill buffers
-    // FIXME: this should probably be done directly in the layer renderer
-    this.helper_.makeProjectionTransform(frameState, currentTransform);
-    multiplyTransform(currentTransform, batch.invertVerticesBufferTransform);
+    const projection = frameState.viewState.projection;
+    const multiWorld = projection.canWrapX();
+    const projectionExtent = projection.getExtent();
+    const extent = frameState.extent;
+    const worldWidth = multiWorld ? getWidth(projectionExtent) : null;
+    const endWorld = multiWorld
+      ? Math.ceil((extent[2] - projectionExtent[2]) / worldWidth) + 1
+      : 1;
+    let world = multiWorld
+      ? Math.floor((extent[0] - projectionExtent[0]) / worldWidth)
+      : 0;
+    do {
+      // multiply the current projection transform with the invert of the one used to fill buffers
+      // FIXME: this should probably be done directly in the layer renderer
+      this.helper_.makeProjectionTransform(frameState, currentTransform, world * worldWidth);
+      multiplyTransform(currentTransform, batch.invertVerticesBufferTransform);
 
-    // enable program, buffers and attributes
-    this.helper_.useProgram(this.program_, frameState);
-    this.helper_.bindBuffer(batch.verticesBuffer);
-    this.helper_.bindBuffer(batch.indicesBuffer);
-    this.helper_.enableAttributes(this.attributes_);
+      // enable program, buffers and attributes
+      this.helper_.useProgram(this.program_, frameState);
+      this.helper_.bindBuffer(batch.verticesBuffer);
+      this.helper_.bindBuffer(batch.indicesBuffer);
+      this.helper_.enableAttributes(this.attributes_);
 
-    const renderCount = batch.indicesBuffer.getSize();
-    this.helper_.drawElements(0, renderCount);
+      const renderCount = batch.indicesBuffer.getSize();
+      this.helper_.drawElements(0, renderCount);
+
+    } while (++world < endWorld);
   }
 
   /**
