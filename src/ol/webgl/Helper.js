@@ -907,10 +907,9 @@ class WebGLHelper extends Disposable {
    * The resulting transform can be used to convert world space coordinates to view coordinates.
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
    * @param {import("../transform").Transform} transform Transform to update.
-   * @param {number} [offsetX] Optional x offset
    * @return {import("../transform").Transform} The updated transform object.
    */
-  makeProjectionTransform(frameState, transform, offsetX) {
+  makeProjectionTransform(frameState, transform) {
     const size = frameState.size;
     const rotation = frameState.viewState.rotation;
     const resolution = frameState.viewState.resolution;
@@ -924,7 +923,7 @@ class WebGLHelper extends Disposable {
       2 / (resolution * size[0]),
       2 / (resolution * size[1]),
       -rotation,
-      offsetX !== undefined ? -center[0] + offsetX : -center[0],
+      -center[0],
       -center[1]
     );
     return transform;
