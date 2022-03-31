@@ -9,7 +9,6 @@ import {
   makeInverse as makeInverseTransform,
   multiply as multiplyTransform,
 } from '../../transform.js';
-import {getWidth} from '../../extent.js';
 
 /**
  * @typedef {Object} CustomAttribute A description of a custom attribute to be passed on to the GPU, with a value different
