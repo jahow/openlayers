@@ -12,6 +12,7 @@ import {FLOAT} from '../../../../../../src/ol/webgl.js';
 import {WebGLWorkerMessageType} from '../../../../../../src/ol/render/webgl/constants.js';
 import {create as createTransform} from '../../../../../../src/ol/transform.js';
 import {create as createWebGLWorker} from '../../../../../../src/ol/worker/webgl.js';
+import {get} from '../../../../../../src/ol/proj/projections.js';
 
 const POINT_VERTEX_SHADER = `precision mediump float;
 void main(void) {}`;
@@ -23,7 +24,9 @@ const SAMPLE_FRAMESTATE = {
     center: [0, 10],
     resolution: 1,
     rotation: 0,
+    projection: get('EPSG:3857'),
   },
+  extent: [-5, 5, 5, 15],
   size: [10, 10],
 };
 

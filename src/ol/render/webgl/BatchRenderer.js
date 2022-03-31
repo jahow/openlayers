@@ -9,7 +9,7 @@ import {
   makeInverse as makeInverseTransform,
   multiply as multiplyTransform,
 } from '../../transform.js';
-import {getWidth} from "../../extent.js";
+import {getWidth} from '../../extent.js';
 
 /**
  * @typedef {Object} CustomAttribute A description of a custom attribute to be passed on to the GPU, with a value different
@@ -106,7 +106,11 @@ class AbstractBatchRenderer {
     do {
       // multiply the current projection transform with the invert of the one used to fill buffers
       // FIXME: this should probably be done directly in the layer renderer
-      this.helper_.makeProjectionTransform(frameState, currentTransform, world * worldWidth);
+      this.helper_.makeProjectionTransform(
+        frameState,
+        currentTransform,
+        world * worldWidth
+      );
       multiplyTransform(currentTransform, batch.invertVerticesBufferTransform);
 
       // enable program, buffers and attributes
@@ -117,7 +121,6 @@ class AbstractBatchRenderer {
 
       const renderCount = batch.indicesBuffer.getSize();
       this.helper_.drawElements(0, renderCount);
-
     } while (++world < endWorld);
   }
 
