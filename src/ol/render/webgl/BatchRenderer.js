@@ -90,38 +90,22 @@ class AbstractBatchRenderer {
    * @param {import("./MixedGeometryBatch.js").GeometryBatch} batch Geometry batch
    * @param {import("../../transform.js").Transform} currentTransform Transform
    * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
+   * @param {number} [offsetX] Optional x offset
    */
-  render(batch, currentTransform, frameState) {
-    const projection = frameState.viewState.projection;
-    const multiWorld = projection.canWrapX();
-    const projectionExtent = projection.getExtent();
-    const extent = frameState.extent;
-    const worldWidth = multiWorld ? getWidth(projectionExtent) : null;
-    const endWorld = multiWorld
-      ? Math.ceil((extent[2] - projectionExtent[2]) / worldWidth) + 1
-      : 1;
-    let world = multiWorld
-      ? Math.floor((extent[0] - projectionExtent[0]) / worldWidth)
-      : 0;
-    do {
-      // multiply the current projection transform with the invert of the one used to fill buffers
-      // FIXME: this should probably be done directly in the layer renderer
-      this.helper_.makeProjectionTransform(
-        frameState,
-        currentTransform,
-        world * worldWidth
-      );
-      multiplyTransform(currentTransform, batch.invertVerticesBufferTransform);
+  render(batch, currentTransform, frameState, offsetX) {
+    // multiply the current projection transform with the invert of the one used to fill buffers
+    // FIXME: this should probably be done directly in the layer renderer
+    this.helper_.makeProjectionTransform(frameState, currentTransform, offsetX);
+    multiplyTransform(currentTransform, batch.invertVerticesBufferTransform);
 
-      // enable program, buffers and attributes
-      this.helper_.useProgram(this.program_, frameState);
-      this.helper_.bindBuffer(batch.verticesBuffer);
-      this.helper_.bindBuffer(batch.indicesBuffer);
-      this.helper_.enableAttributes(this.attributes_);
+    // enable program, buffers and attributes
+    this.helper_.useProgram(this.program_, frameState);
+    this.helper_.bindBuffer(batch.verticesBuffer);
+    this.helper_.bindBuffer(batch.indicesBuffer);
+    this.helper_.enableAttributes(this.attributes_);
 
-      const renderCount = batch.indicesBuffer.getSize();
-      this.helper_.drawElements(0, renderCount);
-    } while (++world < endWorld);
+    const renderCount = batch.indicesBuffer.getSize();
+    this.helper_.drawElements(0, renderCount);
   }
 
   /**
