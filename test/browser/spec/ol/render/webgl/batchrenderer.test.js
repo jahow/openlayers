@@ -144,11 +144,16 @@ describe('Batch renderers', function () {
         batchRenderer.render(
           mixedBatch.pointBatch,
           transform,
-          SAMPLE_FRAMESTATE
+          SAMPLE_FRAMESTATE,
+          12
         );
       });
       it('computes current transform', function () {
         expect(helper.makeProjectionTransform.calledOnce).to.be(true);
+        expect(helper.makeProjectionTransform.args[0][0]).to.eql(
+          SAMPLE_FRAMESTATE
+        );
+        expect(helper.makeProjectionTransform.args[0][2]).to.eql(12);
       });
       it('computes sets up render parameters', function () {
         expect(helper.useProgram.calledOnce).to.be(true);
