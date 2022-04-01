@@ -12,10 +12,7 @@ import ViewHint from '../../ViewHint.js';
 import WebGLLayerRenderer from './Layer.js';
 import {DefaultUniform} from '../../webgl/Helper.js';
 import {buffer, createEmpty, equals, getWidth} from '../../extent.js';
-import {
-  create as createTransform,
-  multiply as multiplyTransform,
-} from '../../transform.js';
+import {create as createTransform} from '../../transform.js';
 import {create as createWebGLWorker} from '../../worker/webgl.js';
 import {listen, unlistenByKey} from '../../events.js';
 
