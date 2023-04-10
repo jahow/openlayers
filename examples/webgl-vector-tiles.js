@@ -7,6 +7,16 @@ import WebGLVectorTileLayerRenderer from '../src/ol/renderer/webgl/VectorTileLay
 import {Fill, Icon, Stroke, Style, Text} from '../src/ol/style.js';
 import {asArray} from '../src/ol/color.js';
 import {packColor} from '../src/ol/webgl/styleparser.js';
+import VectorTileStreamSource from '../src/ol/source/VectorTileStream.js';
+import {
+  defineFrameContainer,
+  showGraph,
+  showTable,
+  trackPerformance,
+} from '@camptocamp/rendering-analyzer';
+import TileGeometry from '../src/ol/webgl/TileGeometry.js';
+import MixedGeometryBatch from '../src/ol/render/webgl/MixedGeometryBatch.js';
+import CompositeMapRenderer from '../src/ol/renderer/Composite.js';
 
 const key =
   'pk.eyJ1IjoiYWhvY2V2YXIiLCJhIjoiY2t0cGdwMHVnMGdlbzMxbDhwazBic2xrNSJ9.WbcTL9uj8JPAsnT9mgb7oQ';
@@ -48,11 +58,13 @@ class WebGLVectorTileLayer extends VectorTile {
 const map = new Map({
   layers: [
     new WebGLVectorTileLayer({
+      // source: new VectorTileStreamSource({
       source: new VectorTileSource({
         attributions:
           '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
           '© <a href="https://www.openstreetmap.org/copyright">' +
           'OpenStreetMap contributors</a>',
+        // format: 'mvt',
         format: new MVT(),
         url:
           'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6/' +
