@@ -80,3 +80,11 @@ const map = new Map({
     zoom: 2,
   }),
 });
+
+defineFrameContainer(CompositeMapRenderer, 'renderFrame');
+trackPerformance(TileGeometry);
+trackPerformance(MixedGeometryBatch);
+trackPerformance(WebGLVectorTileLayerRenderer);
+trackPerformance(MVT);
+showGraph();
+showTable();
