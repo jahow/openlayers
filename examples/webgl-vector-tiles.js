@@ -1,6 +1,5 @@
 import MVT from '../src/ol/format/MVT.js';
 import Map from '../src/ol/Map.js';
-import VectorTile from '../src/ol/layer/VectorTile.js';
 import VectorTileSource from '../src/ol/source/VectorTile.js';
 import View from '../src/ol/View.js';
 import WebGLVectorTileLayerRenderer from '../src/ol/renderer/webgl/VectorTileLayer.js';
@@ -17,6 +16,7 @@ import {
 import TileGeometry from '../src/ol/webgl/TileGeometry.js';
 import MixedGeometryBatch from '../src/ol/render/webgl/MixedGeometryBatch.js';
 import CompositeMapRenderer from '../src/ol/renderer/Composite.js';
+import VectorTile from '../src/ol/layer/VectorTile.js';
 
 const key =
   'pk.eyJ1IjoiYWhvY2V2YXIiLCJhIjoiY2t0cGdwMHVnMGdlbzMxbDhwazBic2xrNSJ9.WbcTL9uj8JPAsnT9mgb7oQ';
@@ -24,32 +24,27 @@ const key =
 class WebGLVectorTileLayer extends VectorTile {
   createRenderer() {
     return new WebGLVectorTileLayerRenderer(this, {
-      fill: {
-        attributes: {
-          color: (feature) => {
-            const style = this.getStyle()(feature, 1)[0];
-            const color = asArray(style?.getFill()?.getColor() || '#eee');
-            return packColor(color);
-          },
+      style: {
+        symbol: {
+          symbolType: 'circle',
+          color: [60, 60, 60],
+          size: 6,
         },
-      },
-      stroke: {
-        attributes: {
-          color: (feature) => {
-            const style = this.getStyle()(feature, 1)[0];
-            const color = asArray(style?.getStroke()?.getColor() || '#eee');
-            return packColor(color);
-          },
-          width: (feature) => {
-            const style = this.getStyle()(feature, 1)[0];
-            return style?.getStroke()?.getWidth() || 0;
-          },
-        },
-      },
-      point: {
-        attributes: {
-          color: () => packColor(asArray('#777')),
-        },
+        'stroke-color': [
+          'match',
+          ['get', 'layer'],
+          'admin',
+          '#76757c',
+          [200, 200, 200],
+        ],
+        'stroke-width': 1.5,
+        'fill-color': [
+          'match',
+          ['get', 'layer'],
+          'water',
+          '#a0c8f0',
+          [200, 200, 200, 0.4],
+        ],
       },
     });
   }
@@ -58,14 +53,14 @@ class WebGLVectorTileLayer extends VectorTile {
 const map = new Map({
   layers: [
     new WebGLVectorTileLayer({
-      // source: new VectorTileStreamSource({
-      source: new VectorTileSource({
+      source: new VectorTileStreamSource({
+        // source: new VectorTileSource({
         attributions:
           '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
           '© <a href="https://www.openstreetmap.org/copyright">' +
           'OpenStreetMap contributors</a>',
-        // format: 'mvt',
-        format: new MVT(),
+        format: 'mvt',
+        // format: new MVT(),
         url:
           'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6/' +
           '{z}/{x}/{y}.vector.pbf?access_token=' +

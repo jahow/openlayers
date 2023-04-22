@@ -88,6 +88,7 @@ class WebGLArrayBuffer {
    */
   fromArrayBuffer(buffer) {
     this.array = new (getArrayClassForType(this.type))(buffer);
+    return this;
   }
 
   /**

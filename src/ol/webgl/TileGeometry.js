@@ -9,6 +9,9 @@ import {
   reset as resetTransform,
   translate as translateTransform,
 } from '../transform.js';
+import {StreamVectorTile} from '../source/VectorTileStream.js';
+import WebGLArrayBuffer from './Buffer.js';
+import {ARRAY_BUFFER, DYNAMIC_DRAW, ELEMENT_ARRAY_BUFFER} from '../webgl.js';
 
 /**
  * @typedef {import("../VectorRenderTile").default} TileType
@@ -51,6 +54,40 @@ class TileGeometry extends BaseTileRepresentation {
 
   uploadTile_() {
     this.batch.clear();
+    if (this.tile instanceof StreamVectorTile) {
+      this.batch.polygonBatch.indicesBuffer = new WebGLArrayBuffer(
+        ELEMENT_ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.polygonIndexBuffer);
+      this.helper_.flushBufferData(this.batch.polygonBatch.indicesBuffer);
+      this.batch.polygonBatch.verticesBuffer = new WebGLArrayBuffer(
+        ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.polygonVertexBuffer);
+      this.helper_.flushBufferData(this.batch.polygonBatch.verticesBuffer);
+      this.batch.lineStringBatch.indicesBuffer = new WebGLArrayBuffer(
+        ELEMENT_ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.lineStringIndexBuffer);
+      this.helper_.flushBufferData(this.batch.lineStringBatch.indicesBuffer);
+      this.batch.lineStringBatch.verticesBuffer = new WebGLArrayBuffer(
+        ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.lineStringVertexBuffer);
+      this.helper_.flushBufferData(this.batch.lineStringBatch.verticesBuffer);
+      this.batch.pointBatch.indicesBuffer = new WebGLArrayBuffer(
+        ELEMENT_ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.pointIndexBuffer);
+      this.helper_.flushBufferData(this.batch.pointBatch.indicesBuffer);
+      this.batch.pointBatch.verticesBuffer = new WebGLArrayBuffer(
+        ARRAY_BUFFER,
+        DYNAMIC_DRAW
+      ).fromArrayBuffer(this.tile.pointVertexBuffer);
+      this.helper_.flushBufferData(this.batch.pointBatch.verticesBuffer);
+      return;
+    }
+
     const sourceTiles = this.tile.getSourceTiles();
     const features = sourceTiles.reduce(
       (accumulator, sourceTile) => accumulator.concat(sourceTile.getFeatures()),

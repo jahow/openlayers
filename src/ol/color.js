@@ -48,6 +48,8 @@ export function asString(color) {
  * @return {string} Rgb string.
  */
 function fromNamed(color) {
+  // FIXME: find a solution when in a worker??
+  if (typeof document === 'undefined') return '';
   const el = document.createElement('div');
   el.style.color = color;
   if (el.style.color !== '') {

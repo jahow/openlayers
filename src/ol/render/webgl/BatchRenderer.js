@@ -50,7 +50,8 @@ class AbstractBatchRenderer {
      * @type {WebGLProgram}
      * @private
      */
-    this.program_ = this.helper_.getProgram(fragmentShader, vertexShader);
+    this.program_ =
+      this.helper_ && this.helper_.getProgram(fragmentShader, vertexShader);
 
     /**
      * A list of attributes used by the renderer.

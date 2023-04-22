@@ -28,6 +28,11 @@ import {
 import {create as createWebGLWorker} from '../../worker/webgl.js';
 import {getIntersection} from '../../extent.js';
 import {packColor} from '../../webgl/styleparser.js';
+import VectorTileStreamSource, {
+  StreamVectorTile,
+} from '../../source/VectorTileStream.js';
+import {parseLiteralStyle} from '../../webgl/styleparser.js';
+import {getUid} from '../../util.js';
 
 /**
  * @param {Object<import("./shaders.js").DefaultAttributes,CustomAttributeCallback>} obj Lookup of attribute getters.
@@ -61,6 +66,7 @@ function toAttributesArray(obj) {
  * @property {ShaderProgram} [fill] Attributes and shaders for filling polygons.
  * @property {ShaderProgram} [stroke] Attributes and shaders for line strings and polygon strokes.
  * @property {ShaderProgram} [point] Attributes and shaders for points.
+ * @property {import('../../style/literal.js').LiteralStyle} [style] literal style
  * @property {Object<string, import("../../webgl/Helper").UniformValue>} [uniforms] Additional uniforms
  * made available to shaders.
  * @property {number} [cacheSize=512] The vector tile cache size.
@@ -116,7 +122,15 @@ class WebGLVectorTileLayerRenderer extends WebGLBaseTileLayerRenderer {
     this.tmpTransform_ = createTransform();
     this.tmpMat4_ = createMat4();
 
+    this.style_ = options.style;
+
     this.applyOptions_(options);
+
+    if (this.getLayer().getSource() instanceof VectorTileStreamSource) {
+      this.getLayer()
+        .getSource()
+        .registerLayerAndStyle(this.getLayer(), this.style_);
+    }
   }
 
   /**
@@ -136,6 +150,24 @@ class WebGLVectorTileLayerRenderer extends WebGLBaseTileLayerRenderer {
    * @private
    */
   applyOptions_(options) {
+    if (this.style_) {
+      const parsed = parseLiteralStyle(this.style_);
+
+      this.fillVertexShader_ = parsed.builder.getFillVertexShader();
+      this.fillFragmentShader_ = parsed.builder.getFillFragmentShader();
+      this.fillAttributes_ = parsed.attributes;
+
+      this.strokeVertexShader_ = parsed.builder.getStrokeVertexShader();
+      this.strokeFragmentShader_ = parsed.builder.getStrokeFragmentShader();
+      this.strokeAttributes_ = parsed.attributes;
+
+      this.pointVertexShader_ = parsed.builder.getSymbolVertexShader();
+      this.pointFragmentShader_ = parsed.builder.getSymbolFragmentShader();
+      this.pointAttributes_ = parsed.attributes;
+
+      return;
+    }
+
     const fillAttributes = {
       color: function () {
         return packColor('#ddd');
@@ -212,6 +244,9 @@ class WebGLVectorTileLayerRenderer extends WebGLBaseTileLayerRenderer {
   }
 
   createTileRepresentation(options) {
+    if (options.tile instanceof StreamVectorTile) {
+      options.tile.layerId = getUid(this.getLayer());
+    }
     const tileRep = new TileGeometry(
       options,
       this.polygonRenderer_,

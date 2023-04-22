@@ -240,7 +240,7 @@ function parseFillProperties(
  * @property {boolean} hasStroke Has a stroke style defined
  * @property {boolean} hasFill Has a fill style defined
  * @property {Object<string,import("./Helper").UniformValue>} uniforms Uniform definitions.
- * @property {Array<import("../renderer/webgl/PointsLayer").CustomAttribute>} attributes Attribute descriptions.
+ * @property {Array<import('../render/webgl/BatchRenderer.js').CustomAttribute>} attributes Attribute descriptions.
  */
 
 /**
