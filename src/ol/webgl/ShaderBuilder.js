@@ -2,6 +2,7 @@
  * Class for generating shaders from literal style objects
  * @module ol/webgl/ShaderBuilder
  */
+import {colorToGlsl} from '../style/expressions.js';
 
 const BASE_UNIFORMS = `uniform mat4 u_projectionMatrix;
 uniform mat4 u_screenToWorldMatrix;
@@ -70,7 +71,7 @@ export class ShaderBuilder {
      * @type {string}
      * @private
      */
-    this.symbolSizeExpression_ = 'vec2(1.0)';
+    this.symbolSizeExpression_ = 'vec2(5.0)';
 
     /**
      * @type {string}
@@ -88,7 +89,7 @@ export class ShaderBuilder {
      * @type {string}
      * @private
      */
-    this.symbolColorExpression_ = 'vec4(1.0)';
+    this.symbolColorExpression_ = colorToGlsl('rgba(255,255,255,0.4)');
 
     /**
      * @type {string}
@@ -118,13 +119,13 @@ export class ShaderBuilder {
      * @type {string}
      * @private
      */
-    this.strokeWidthExpression_ = '1.0';
+    this.strokeWidthExpression_ = '1.25';
 
     /**
      * @type {string}
      * @private
      */
-    this.strokeColorExpression_ = 'vec4(1.0)';
+    this.strokeColorExpression_ = colorToGlsl('#3399CC');
 
     /**
      * @type {boolean}
@@ -136,7 +137,7 @@ export class ShaderBuilder {
      * @type {string}
      * @private
      */
-    this.fillColorExpression_ = 'vec4(1.0)';
+    this.fillColorExpression_ = colorToGlsl('rgba(255,255,255,0.4)');
 
     /**
      * @type {Array<string>}

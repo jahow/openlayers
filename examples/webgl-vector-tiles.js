@@ -16,9 +16,7 @@ const result = parseLiteralStyle({
   'stroke-color': ['get', 'strokeColor'],
   'stroke-width': ['get', 'strokeWidth'],
   symbol: {
-    symbolType: 'circle',
     size: 8,
-    color: '#777',
   },
 });
 
