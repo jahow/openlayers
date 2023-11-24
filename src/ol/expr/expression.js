@@ -1097,3 +1097,35 @@ function parseCallExpression(encoded, context, typeHint) {
   }
   return parser(encoded, context, typeHint);
 }
+
+/**
+ * Returns a simplified geometry type suited for the `geometry-type` operator
+ * @param {import('../geom/Geometry.js').default|import('../render/Feature.js').default} geometry Geometry object
+ * @return {'Point'|'LineString'|'Polygon'|''} Simplified geometry type; empty string of no geometry found
+ */
+export function computeGeometryType(geometry) {
+  if (!geometry) {
+    return '';
+  }
+  const type = geometry.getType();
+  switch (type) {
+    case 'Point':
+    case 'LineString':
+    case 'Polygon':
+      return type;
+    case 'MultiPoint':
+    case 'MultiLineString':
+    case 'MultiPolygon':
+      return /** @type {'Point'|'LineString'|'Polygon'} */ (type.substring(5));
+    case 'Circle':
+      return 'Polygon';
+    case 'GeometryCollection':
+      return computeGeometryType(
+        /** @type {import ('../geom/GeometryCollection.js').default} */ (
+          geometry
+        ).getGeometries()[0]
+      );
+    default:
+      return '';
+  }
+}
