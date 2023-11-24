@@ -30,7 +30,7 @@ const map = new Map({
           'OpenStreetMap contributors</a>',
         format: new MVT(),
         url:
-          'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6/' +
+          'https://api.mapbox.com/v4/mapbox.mapbox-streets-v6/' +
           '{z}/{x}/{y}.vector.pbf?access_token=' +
           key,
       }),

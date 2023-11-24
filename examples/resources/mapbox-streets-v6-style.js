@@ -599,70 +599,75 @@ function getMapboxStreetsV6Style() {
         'text-stroke-width': 1,
       },
     },
-    {
-      filter: [
-        'all',
-        ['==', ['get', 'layer'], 'poi_label'],
-        ['<=', ['resolution'], 19.109257071294063],
-        ['==', ['get', 'scalerank'], 1],
-        ['!=', ['get', 'maki'], 'marker'],
-      ],
-      style: {
-        ...iconProperties,
-      },
-      variables: offsetVariables,
-    },
-    {
-      filter: [
-        'all',
-        ['==', ['get', 'layer'], 'poi_label'],
-        ['<=', ['resolution'], 9.554628535647032],
-        ['==', ['get', 'scalerank'], 2],
-        ['!=', ['get', 'maki'], 'marker'],
-      ],
-      style: {
-        ...iconProperties,
-      },
-      variables: offsetVariables,
-    },
-    {
-      filter: [
-        'all',
-        ['==', ['get', 'layer'], 'poi_label'],
-        ['<=', ['resolution'], 4.777314267823516],
-        ['==', ['get', 'scalerank'], 3],
-        ['!=', ['get', 'maki'], 'marker'],
-      ],
-      style: {
-        ...iconProperties,
-      },
-      variables: offsetVariables,
-    },
-    {
-      filter: [
-        'all',
-        ['==', ['get', 'layer'], 'poi_label'],
-        ['<=', ['resolution'], 2.388657133911758],
-        ['==', ['get', 'scalerank'], 4],
-        ['!=', ['get', 'maki'], 'marker'],
-      ],
-      style: {
-        ...iconProperties,
-      },
-      variables: offsetVariables,
-    },
-    {
-      filter: [
-        'all',
-        ['==', ['get', 'layer'], 'poi_label'],
-        ['<=', ['resolution'], 1.194328566955879],
-        ['==', ['get', 'scalerank'], 5],
-        ['!=', ['get', 'maki'], 'marker'],
-      ],
-      style: {
-        ...iconProperties,
-      },
-      variables: offsetVariables,
-    },
+
+    // FIXME: missing to get icons to work:
+    // canvas: dynamic icon offset, read from variables, dynamic var name
+    // webgl: concat string, dynamic var name
+
+    // {
+    //   filter: [
+    //     'all',
+    //     ['==', ['get', 'layer'], 'poi_label'],
+    //     ['<=', ['resolution'], 19.109257071294063],
+    //     ['==', ['get', 'scalerank'], 1],
+    //     ['!=', ['get', 'maki'], 'marker'],
+    //   ],
+    //   style: {
+    //     ...iconProperties,
+    //   },
+    //   variables: offsetVariables,
+    // },
+    // {
+    //   filter: [
+    //     'all',
+    //     ['==', ['get', 'layer'], 'poi_label'],
+    //     ['<=', ['resolution'], 9.554628535647032],
+    //     ['==', ['get', 'scalerank'], 2],
+    //     ['!=', ['get', 'maki'], 'marker'],
+    //   ],
+    //   style: {
+    //     ...iconProperties,
+    //   },
+    //   variables: offsetVariables,
+    // },
+    // {
+    //   filter: [
+    //     'all',
+    //     ['==', ['get', 'layer'], 'poi_label'],
+    //     ['<=', ['resolution'], 4.777314267823516],
+    //     ['==', ['get', 'scalerank'], 3],
+    //     ['!=', ['get', 'maki'], 'marker'],
+    //   ],
+    //   style: {
+    //     ...iconProperties,
+    //   },
+    //   variables: offsetVariables,
+    // },
+    // {
+    //   filter: [
+    //     'all',
+    //     ['==', ['get', 'layer'], 'poi_label'],
+    //     ['<=', ['resolution'], 2.388657133911758],
+    //     ['==', ['get', 'scalerank'], 4],
+    //     ['!=', ['get', 'maki'], 'marker'],
+    //   ],
+    //   style: {
+    //     ...iconProperties,
+    //   },
+    //   variables: offsetVariables,
+    // },
+    // {
+    //   filter: [
+    //     'all',
+    //     ['==', ['get', 'layer'], 'poi_label'],
+    //     ['<=', ['resolution'], 1.194328566955879],
+    //     ['==', ['get', 'scalerank'], 5],
+    //     ['!=', ['get', 'maki'], 'marker'],
+    //   ],
+    //   style: {
+    //     ...iconProperties,
+    //   },
+    //   variables: offsetVariables,
+    // },
   ];
 }
