@@ -4,7 +4,13 @@
 import WebGLArrayBuffer from '../../webgl/Buffer.js';
 import {ARRAY_BUFFER, DYNAMIC_DRAW, ELEMENT_ARRAY_BUFFER} from '../../webgl.js';
 import {AttributeType} from '../../webgl/Helper.js';
+import {
+  BooleanType,
+  computeGeometryType,
+  newParsingContext,
+} from '../../expr/expression.js';
 import {WebGLWorkerMessageType} from './constants.js';
+import {buildExpression, newEvaluationContext} from '../../expr/cpu.js';
 import {colorEncodeId} from './utils.js';
 import {
   create as createTransform,
@@ -104,11 +110,13 @@ class VectorStyleRenderer {
    * @param {VectorStyle} styleOrShaders Literal style or custom shaders
    * @param {import('../../webgl/Helper.js').default} helper Helper
    * @param {boolean} enableHitDetection Whether to enable the hit detection (needs compatible shader)
+   * @param {import("../../expr/expression.js").ExpressionValue} [filter] Optional filter expression
    */
-  constructor(styleOrShaders, helper, enableHitDetection) {
+  constructor(styleOrShaders, helper, enableHitDetection, filter) {
     this.helper_ = helper;
 
     this.hitDetectionEnabled_ = enableHitDetection;
+
     let shaders = /** @type {StyleShaders} */ (styleOrShaders);
     const isShaders = 'builder' in styleOrShaders;
     if (!isShaders) {
@@ -164,6 +172,31 @@ class VectorStyleRenderer {
         this.symbolFragmentShader_,
         this.symbolVertexShader_
       );
+    }
+
+    /**
+     * @type {function(import('../../Feature.js').FeatureLike): boolean}
+     * @private
+     */
+    this.featureFilter_ = null;
+    if (filter) {
+      const parsingContext = newParsingContext();
+      const compiled = buildExpression(filter, BooleanType, parsingContext);
+      this.featureFilter_ = (feature) => {
+        const evalContext = newEvaluationContext();
+        evalContext.properties = feature.getPropertiesInternal();
+        evalContext.resolution = 1; // resolution is unknown
+        if (parsingContext.featureId) {
+          const id = feature.getId();
+          if (id !== undefined) {
+            evalContext.featureId = id;
+          } else {
+            evalContext.featureId = null;
+          }
+        }
+        evalContext.geometryType = computeGeometryType(feature.getGeometry());
+        return /** @type {boolean} */ (compiled(evalContext));
+      };
     }
 
     const hitDetectionAttributes = this.hitDetectionEnabled_
@@ -261,11 +294,18 @@ class VectorStyleRenderer {
   /**
    * @param {import('./MixedGeometryBatch.js').default} geometryBatch Geometry batch
    * @param {import("../../transform.js").Transform} transform Transform to apply to coordinates
-   * @return {Promise<WebGLBuffers>} A promise resolving to WebGL buffers
+   * @return {Promise<WebGLBuffers|null>} A promise resolving to WebGL buffers; returns null if buffers are empty
    */
   async generateBuffers(geometryBatch, transform) {
+    let filteredBatch = geometryBatch;
+    if (this.featureFilter_) {
+      filteredBatch = filteredBatch.filter(this.featureFilter_);
+      if (filteredBatch.isEmpty()) {
+        return null;
+      }
+    }
     const renderInstructions = this.generateRenderInstructions_(
-      geometryBatch,
+      filteredBatch,
       transform
     );
     const [polygonBuffers, lineStringBuffers, pointBuffers] = await Promise.all(
