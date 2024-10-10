@@ -13,11 +13,11 @@ const style = {
   },
   'stroke-color': [
     'case',
-    ['==', ['var', 'highlightedId'], ['get', 'id']],
+    ['==', ['var', 'highlightedId'], ['id']],
     'white',
     ['*', ['get', 'COLOR'], [220, 220, 220]],
   ],
-  'stroke-width': 2,
+  'stroke-width': ['case', ['==', ['var', 'highlightedId'], ['id']], 3, 2],
   'stroke-offset': -1,
   'fill-color': ['*', ['get', 'COLOR'], [255, 255, 255, 0.6]],
 };
@@ -64,7 +64,7 @@ const displayFeatureInfo = function (pixel) {
     return;
   }
 
-  const id = feature.getId(); // FIXME: use feature.getId()
+  const id = feature.getId();
   if (id !== highlightedId) {
     highlightedId = id;
     // FIXME: do vectorLayer.updateStyleVariables({ highlightedId })

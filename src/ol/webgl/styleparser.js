@@ -11,14 +11,15 @@ import {
   StringType,
   newParsingContext,
 } from '../expr/expression.js';
-import {ShaderBuilder} from './ShaderBuilder.js';
-import {asArray} from '../color.js';
 import {
+  FEATURE_ID_PROPERTY_NAME,
   buildExpression,
   getStringNumberEquivalent,
   stringToGlsl,
   uniformNameForVariable,
 } from '../expr/gpu.js';
+import {ShaderBuilder} from './ShaderBuilder.js';
+import {asArray} from '../color.js';
 
 /**
  * Recursively parses a style expression and outputs a GLSL-compatible string. Takes in a compilation context that
@@ -973,6 +974,21 @@ export function parseLiteralStyle(style) {
   const attributes = {};
   for (const propName in vertContext.properties) {
     const property = vertContext.properties[propName];
+
+    if (propName === FEATURE_ID_PROPERTY_NAME) {
+      attributes[FEATURE_ID_PROPERTY_NAME] = {
+        size: getGlslSizeFromType(property.type),
+        callback: (feature) => {
+          const value = feature.getId();
+          if (typeof value === 'string') {
+            return getStringNumberEquivalent(value);
+          }
+          return value;
+        },
+      };
+      continue;
+    }
+
     const callback = (feature) => {
       const value = property.evaluator
         ? property.evaluator(feature)
