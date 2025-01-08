@@ -2,7 +2,7 @@
  * @module ol/render/webgl/VectorStyleRenderer
  */
 import {
-  UNKNOWN_VALUE,
+  UNKNOWN,
   buildExpression,
   newEvaluationContext,
 } from '../../expr/cpu.js';
@@ -248,7 +248,7 @@ class VectorStyleRenderer {
           }
           evalContext.geometryType = computeGeometryType(feature.getGeometry());
           const result = /** @type {boolean} */ (compiled(evalContext));
-          return result === UNKNOWN_VALUE || result;
+          return result === UNKNOWN || result;
         };
       } catch {
         // do nothing: filter expression could not be compiled for CPU

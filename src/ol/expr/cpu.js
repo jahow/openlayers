@@ -20,16 +20,16 @@ import {ColorType, LiteralExpression, Ops, parse} from './expression.js';
  * value.  The evaluator function should do as little allocation and work as possible.
  */
 
-export const UNKNOWN_VALUE = {};
+export const UNKNOWN = {};
 
 /**
  * @typedef {Object} EvaluationContext
- * Each of these values can be set to UNKNOWN_VALUE, which means that they are not known in the current context.
- * @property {Object|UNKNOWN_VALUE} properties The values for properties used in 'get' expressions.
- * @property {Object|UNKNOWN_VALUE} variables The values for variables used in 'var' expressions.
- * @property {number|UNKNOWN_VALUE} resolution The map resolution.
- * @property {string|number|UNKNOWN_VALUE} featureId The feature id.
- * @property {string|UNKNOWN_VALUE} geometryType Geometry type of the current object.
+ * Each of these values can be set to UNKNOWN, which means that they are not known in the current context.
+ * @property {Object|UNKNOWN} properties The values for properties used in 'get' expressions.
+ * @property {Object|UNKNOWN} variables The values for variables used in 'var' expressions.
+ * @property {number|UNKNOWN} resolution The map resolution.
+ * @property {string|number|UNKNOWN} featureId The feature id.
+ * @property {string|UNKNOWN} geometryType Geometry type of the current object.
  */
 
 /**
@@ -37,11 +37,11 @@ export const UNKNOWN_VALUE = {};
  */
 export function newEvaluationContext() {
   return {
-    variables: UNKNOWN_VALUE,
-    properties: UNKNOWN_VALUE,
-    resolution: UNKNOWN_VALUE,
-    featureId: UNKNOWN_VALUE,
-    geometryType: UNKNOWN_VALUE,
+    variables: UNKNOWN,
+    properties: UNKNOWN,
+    resolution: UNKNOWN,
+    featureId: UNKNOWN,
+    geometryType: UNKNOWN,
   };
 }
 
@@ -228,8 +228,8 @@ function compileAssertionExpression(expression, context) {
       return (context) => {
         for (let i = 0; i < length; ++i) {
           const value = args[i](context);
-          if (value === UNKNOWN_VALUE) {
-            return UNKNOWN_VALUE;
+          if (value === UNKNOWN) {
+            return UNKNOWN;
           }
           if (typeof value === type) {
             return value;
@@ -255,8 +255,8 @@ function compileAccessorExpression(expression, context) {
   switch (expression.operator) {
     case Ops.Get: {
       return (context) => {
-        if (context.properties === UNKNOWN_VALUE) {
-          return UNKNOWN_VALUE;
+        if (context.properties === UNKNOWN) {
+          return UNKNOWN;
         }
         const args = expression.args;
         let value = context.properties[name];
@@ -270,9 +270,7 @@ function compileAccessorExpression(expression, context) {
     }
     case Ops.Var: {
       return (context) =>
-        context.variables === UNKNOWN_VALUE
-          ? UNKNOWN_VALUE
-          : context.variables[name];
+        context.variables === UNKNOWN ? UNKNOWN : context.variables[name];
     }
     case Ops.Has: {
       return (context) => {
@@ -301,7 +299,7 @@ function compileAccessorExpression(expression, context) {
 /**
  * @param {Array<ExpressionEvaluator>} argEvaluators Argument evaluators
  * @param {function(Array): ReturnType} evaluator Final evaluator taking in the evaluated args
- * @return {function(EvaluationContext):ReturnType|UNKNOWN_VALUE} the evaluator function; if any arg evaluated to UNKNOWN_VALUE, will return UNKNOWN_VALUE
+ * @return {function(EvaluationContext):ReturnType|UNKNOWN} the evaluator function; if any arg evaluated to UNKNOWN, will return UNKNOWN
  * @template ReturnType
  */
 function checkForUnknown(argEvaluators, evaluator) {
@@ -309,8 +307,8 @@ function checkForUnknown(argEvaluators, evaluator) {
     const evaluatedArgs = new Array(argEvaluators.length);
     for (let i = 0, ii = evaluatedArgs.length; i < ii; i++) {
       const value = argEvaluators[i](context);
-      if (value === UNKNOWN_VALUE) {
-        return UNKNOWN_VALUE;
+      if (value === UNKNOWN) {
+        return UNKNOWN;
       }
       evaluatedArgs[i] = value;
     }
@@ -520,8 +518,8 @@ function compileCaseExpression(expression, context) {
   return (context) => {
     for (let i = 0; i < length - 1; i += 2) {
       const condition = args[i](context);
-      if (condition === UNKNOWN_VALUE) {
-        return UNKNOWN_VALUE;
+      if (condition === UNKNOWN) {
+        return UNKNOWN;
       }
       if (condition) {
         return args[i + 1](context);
@@ -544,13 +542,13 @@ function compileMatchExpression(expression, context) {
   }
   return (context) => {
     const value = args[0](context);
-    if (value === UNKNOWN_VALUE) {
-      return UNKNOWN_VALUE;
+    if (value === UNKNOWN) {
+      return UNKNOWN;
     }
     for (let i = 1; i < length; i += 2) {
       const matched = args[i](context);
-      if (matched === UNKNOWN_VALUE) {
-        return UNKNOWN_VALUE;
+      if (matched === UNKNOWN) {
+        return UNKNOWN;
       }
       if (value === matched) {
         return args[i + 1](context);

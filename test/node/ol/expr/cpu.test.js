@@ -1,5 +1,5 @@
 import {
-  UNKNOWN_VALUE,
+  UNKNOWN,
   buildExpression,
   newEvaluationContext,
 } from '../../../../src/ol/expr/cpu.js';
@@ -810,63 +810,63 @@ describe('ol/expr/cpu.js', () => {
         type: ColorType,
         expression: ['*', ['get', 'color'], [255, 255, 255, 0.5]],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, string)',
         type: StringType,
         expression: ['concat', ['get', 'type'], '-icon'],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, boolean)',
         type: BooleanType,
         expression: ['all', ['get', 'enabled'], true],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, assertion)',
         type: StringType,
         expression: ['string', ['get', 'type'], 'hello'],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, comparison)',
         type: BooleanType,
         expression: ['==', ['get', 'enabled'], false],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, case)',
         type: NumberType,
         expression: ['case', ['get', 'enabled'], 10, false, 20, 30],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, match)',
         type: NumberType,
         expression: ['match', ['get', 'type'], 'abc', 10, 'def', 20, 30],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown properties, interpolate)',
@@ -881,34 +881,34 @@ describe('ol/expr/cpu.js', () => {
           50,
         ],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown variables)',
         type: ColorType,
         expression: ['*', ['var', 'color'], [255, 255, 255, 0.5]],
         context: {
-          variables: UNKNOWN_VALUE,
+          variables: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context (unknown resolution)',
         type: NumberType,
         expression: ['-', ['resolution'], 100],
         context: {
-          resolution: UNKNOWN_VALUE,
+          resolution: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
       {
         name: 'incomplete context, string assertion (unknown value after)',
         type: StringType,
         expression: ['string', 42, 'chicken', ['get', 'id']],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
         expected: 'chicken',
       },
@@ -917,9 +917,9 @@ describe('ol/expr/cpu.js', () => {
         type: StringType,
         expression: ['string', 42, ['get', 'id'], 'chicken'],
         context: {
-          properties: UNKNOWN_VALUE,
+          properties: UNKNOWN,
         },
-        expected: UNKNOWN_VALUE,
+        expected: UNKNOWN,
       },
     ];
 
