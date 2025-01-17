@@ -886,6 +886,14 @@ describe('ol/expr/cpu.js', () => {
         expected: UNKNOWN,
       },
       {
+        name: 'incomplete context (unknown properties, has)',
+        context: {
+          properties: UNKNOWN,
+        },
+        expression: ['has', 'property'],
+        expected: UNKNOWN,
+      },
+      {
         name: 'incomplete context (unknown variables)',
         type: ColorType,
         expression: ['*', ['var', 'color'], [255, 255, 255, 0.5]],
@@ -920,6 +928,24 @@ describe('ol/expr/cpu.js', () => {
           properties: UNKNOWN,
         },
         expected: UNKNOWN,
+      },
+      {
+        name: 'incomplete context, coalesce (unknown value before)',
+        type: StringType,
+        expression: ['coalesce', ['get', 'id'], 'default'],
+        context: {
+          properties: UNKNOWN,
+        },
+        expected: UNKNOWN,
+      },
+      {
+        name: 'incomplete context, coalesce (unknown value after)',
+        type: StringType,
+        expression: ['coalesce', 'bla', ['get', 'id'], 'default'],
+        context: {
+          properties: UNKNOWN,
+        },
+        expected: 'bla',
       },
     ];
 
