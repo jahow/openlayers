@@ -6,19 +6,23 @@ import WebGLVectorLayer from '../src/ol/layer/WebGLVector.js';
 import OSM from '../src/ol/source/OSM.js';
 import VectorSource from '../src/ol/source/Vector.js';
 
-const lineStyle = {
-  'stroke-width': 4,
-  'stroke-color': [
-    'interpolate',
-    ['linear'],
-    ['line-metric'],
-    1303200000,
-    'hsl(312,100%,39%)',
-    1303240000,
-    'hsl(36,100%,45%)',
-  ],
-  filter: ['<=', ['line-metric'], ['var', 'timestamp']],
-};
+const lineStyle = [
+  {
+    style: {
+      'stroke-width': 4,
+      'stroke-color': [
+        'interpolate',
+        ['linear'],
+        ['line-metric'],
+        1303200000,
+        'hsl(312,100%,39%)',
+        1303240000,
+        'hsl(36,100%,45%)',
+      ],
+    },
+    filter: ['<=', ['line-metric'], ['var', 'timestamp']],
+  },
+];
 
 const igcUrls = [
   'data/igc/Clement-Latour.igc',
