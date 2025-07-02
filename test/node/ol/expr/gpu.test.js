@@ -677,6 +677,32 @@ describe('ol/expr/gpu.js', () => {
         expression: [1.5, 0.5],
         expected: 'vec2(1.5, 0.5)',
       },
+      {
+        name: 'scale (using attribute)',
+        type: SizeType,
+        expression: [
+          '*',
+          10,
+          ['get', 'scale'],
+          [20, 30],
+          ['case', ['has', 'otherScale'], ['get', 'otherScale'], 1],
+        ],
+        expected:
+          '(vec2(10.0, 10.0) * vec2(a_prop_scale) * vec2(20.0, 30.0) * ((a_prop_otherScale != -9999999.0) ? vec2(a_prop_otherScale) : vec2(1.0, 1.0)))',
+      },
+      {
+        name: 'scale (using variable)',
+        type: SizeType,
+        expression: [
+          '*',
+          10,
+          ['get', 'scale'],
+          [20, 30],
+          ['case', ['var', 'hasScale'], ['var', 'otherScale'], 1],
+        ],
+        expected:
+          '(vec2(10.0, 10.0) * vec2(a_prop_scale) * vec2(20.0, 30.0) * ((u_var_hasScale > 0.0) ? vec2(u_var_otherScale) : vec2(1.0, 1.0)))',
+      },
     ];
 
     for (const c of cases) {

@@ -228,7 +228,9 @@ const compilers = {
       };
     }
     let result = 'a_prop_' + propName;
-    if (isType(expression.type, BooleanType)) {
+    if (isType(expression.type, SizeType)) {
+      result = `vec2(${result})`; // this allows converting to size if the attribute was initialized as a number
+    } else if (isType(expression.type, BooleanType)) {
       result = `(${result} > 0.0)`;
     }
     return result;
@@ -253,7 +255,9 @@ const compilers = {
       };
     }
     let result = uniformNameForVariable(varName);
-    if (isType(expression.type, BooleanType)) {
+    if (isType(expression.type, SizeType)) {
+      result = `vec2(${result})`; // this allows converting to size if the variable was initialized as a number
+    } else if (isType(expression.type, BooleanType)) {
       result = `(${result} > 0.0)`;
     }
     return result;
